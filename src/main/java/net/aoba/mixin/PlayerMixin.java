@@ -26,8 +26,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import net.aoba.Aoba;
 import net.aoba.AobaClient;
-import net.aoba.module.modules.combat.AntiKnockback;
-import net.aoba.module.modules.combat.Reach;
 import net.aoba.module.modules.misc.FastBreak;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.entity.player.Inventory;
@@ -70,28 +68,4 @@ public abstract class PlayerMixin extends LivingEntityMixin {
 	protected void onGetOffGroundSpeed(CallbackInfoReturnable<Float> cir) {
 	}
 
-	@Inject(at = { @At("HEAD") }, method = "blockInteractionRange()D", cancellable = true)
-	private void onBlockInteractionRange(CallbackInfoReturnable<Double> cir) {
-		if (Aoba.getInstance().moduleManager.reach.state.getValue()) {
-			Reach reach = Aoba.getInstance().moduleManager.reach;
-			cir.setReturnValue((double) reach.getReach());
-		}
-	}
-
-	@Inject(at = { @At("HEAD") }, method = "entityInteractionRange()D", cancellable = true)
-	private void onEntityInteractionRange(CallbackInfoReturnable<Double> cir) {
-		if (Aoba.getInstance().moduleManager.reach.state.getValue()) {
-			Reach reach = Aoba.getInstance().moduleManager.reach;
-			cir.setReturnValue((double) reach.getReach());
-		}
-	}
-
-	@Inject(method = "isPushedByFluid", at = @At("HEAD"), cancellable = true)
-	private void onIsPushedByFluids(CallbackInfoReturnable<Boolean> cir) {
-		AntiKnockback antiKnockback = Aoba.getInstance().moduleManager.antiknockback;
-
-		if (antiKnockback.state.getValue() && antiKnockback.getNoPushLiquids()) {
-			cir.setReturnValue(false);
-		}
-	}
 }

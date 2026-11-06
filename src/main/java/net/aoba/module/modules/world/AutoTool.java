@@ -94,9 +94,7 @@ public class AutoTool extends Module implements BlockStateListener, TickListener
         }
 
         if (autoToggle.getValue()) {
-            if (AOBA_CLIENT.moduleManager.killaura.getStatus().equals("Enabled")
-                    || AOBA_CLIENT.moduleManager.bedAura.getStatus().equals("Enabled")
-                    || AOBA_CLIENT.moduleManager.maceaura.getStatus().equals("Enabled")
+            if (AOBA_CLIENT.moduleManager.maceaura.getStatus().equals("Enabled")
                     || AOBA_CLIENT.moduleManager.autocrystal.getStatus().equals("Enabled")
                     || AOBA_CLIENT.moduleManager.autoanchor.getStatus().equals("Enabled")) {
 

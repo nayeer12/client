@@ -37,7 +37,6 @@
     "DeltaTrackerTimerMixin",
     "EntityMixin",
     "FireworkRocketEntityMixin",
-    "EntityRendererMixin",
     "LiquidBlockMixin",
     "FluidRendererMixin",
     "OptionsMixin",

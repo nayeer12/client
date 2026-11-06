@@ -52,7 +52,6 @@ public class CommandManager {
 	public final CmdNoSlowdown noslowdown = new CmdNoSlowdown();
 	public final CmdNuker nuker = new CmdNuker();
 	public final CmdPOV pov = new CmdPOV();
-	public final CmdReach reach = new CmdReach();
 	public final CmdSpam spam = new CmdSpam();
 	public final CmdSprint sprint = new CmdSprint();
 	public final CmdStep step = new CmdStep();

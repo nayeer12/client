@@ -30,7 +30,6 @@ import net.aoba.event.events.PlayerHealthEvent;
 import net.aoba.event.events.SendMovementPacketEvent;
 import net.aoba.gui.GuiManager;
 import net.aoba.mixin.interfaces.ICamera;
-import net.aoba.module.modules.combat.AntiKnockback;
 import net.aoba.module.modules.movement.Fly;
 import net.aoba.module.modules.movement.HighJump;
 import net.aoba.module.modules.movement.Noclip;
@@ -136,14 +135,5 @@ public abstract class LocalPlayerMixin extends AbstractClientPlayerMixin {
 		SendMovementPacketEvent.Post sendMovementPacketPostEvent = new SendMovementPacketEvent.Post();
 
 		Aoba.getInstance().eventManager.Fire(sendMovementPacketPostEvent);
-	}
-
-	@Inject(method = "moveTowardsClosestSpace", at = @At("HEAD"), cancellable = true)
-	private void onPushOutOfBlocks(double x, double z, CallbackInfo ci) {
-		AntiKnockback antiKnockback = Aoba.getInstance().moduleManager.antiknockback;
-
-		if (antiKnockback.state.getValue() && antiKnockback.getNoPushBlocks()) {
-			ci.cancel();
-		}
 	}
 }

@@ -47,14 +47,6 @@ public abstract class EntityMixin {
 	@Shadow
 	public abstract boolean onGround();
 
-	@Inject(at = {
-			@At("HEAD") }, method = "isInvisibleTo(Lnet/minecraft/world/entity/player/Player;)Z", cancellable = true)
-	private void onIsInvisibleCheck(Player message, CallbackInfoReturnable<Boolean> cir) {
-		if (Aoba.getInstance().moduleManager.antiinvis.state.getValue()) {
-			cir.setReturnValue(false);
-		}
-	}
-
 	@Inject(at = { @At("HEAD") }, method = "maxUpStep()F", cancellable = true)
 	public void onGetStepHeight(CallbackInfoReturnable<Float> cir) {
     }
