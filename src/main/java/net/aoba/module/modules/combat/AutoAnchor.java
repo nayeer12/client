@@ -29,6 +29,10 @@ import net.aoba.utils.FindItemResult;
 import net.aoba.utils.entity.DamageUtils;
 import net.aoba.utils.entity.TargetPriority;
 import net.aoba.utils.player.InteractionUtils;
+import net.aoba.utils.player.InventoryUtils;
+import net.minecraft.world.attribute.EnvironmentAttributes;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
@@ -114,7 +118,7 @@ public class AutoAnchor extends Module implements TickListener, Render3DListener
 			.displayName("Target Players").description("Target Players.").defaultValue(true).build();
 
 	private final BooleanSetting targetFriends = BooleanSetting.builder().id("autoanchor_target_friends")
-			.displayName("Target Friends").description("Target Friends.").defaultValue(true).build();
+			.displayName("Target Friends").description("Target Friends.").defaultValue(false).build();
 
 	private final EnumSetting<RotationMode> rotationMode = EnumSetting.<RotationMode>builder()
 			.id("autoanchor_rotation_mode").displayName("Rotation Mode")
@@ -159,7 +163,17 @@ public class AutoAnchor extends Module implements TickListener, Render3DListener
 			.description("Corrects movement to match spoofed rotation by using the server yaw for velocity.")
 			.defaultValue(false).build();
 
+	private final BooleanSetting fastDetonate = BooleanSetting.builder().id("autoanchor_fast_detonate")
+			.displayName("Fast Detonate")
+			.description("Detonate after a single charge using a non-glowstone item instead of charging to 4.")
+			.defaultValue(true).build();
+
+	private final BooleanSetting pauseWhileUsing = BooleanSetting.builder().id("autoanchor_pause_while_using")
+			.displayName("Pause While Using").description("Pause while eating, drinking or blocking.")
+			.defaultValue(true).build();
+
 	private static final long BOX_DISPLAY_TIME_MS = 3000;
+	private boolean warnedSafeDimension;
 
 	private long lastChargeTime;
 	private long lastPlaceTime;
@@ -179,6 +193,8 @@ public class AutoAnchor extends Module implements TickListener, Render3DListener
 		addSetting(autoActivate);
 		addSetting(autoSwitch);
 		addSetting(safeAnchor);
+		addSetting(fastDetonate);
+		addSetting(pauseWhileUsing);
 		addSetting(chargeDelay);
 		addSetting(placeDelay);
 
@@ -218,6 +234,7 @@ public class AutoAnchor extends Module implements TickListener, Render3DListener
 		Aoba.getInstance().eventManager.AddListener(Render3DListener.class, this);
 		nextChargeDelayMs = (long) chargeDelay.randomValue();
 		nextPlaceDelayMs = (long) placeDelay.randomValue();
+		warnedSafeDimension = false;
 	}
 
 	@Override
@@ -226,6 +243,25 @@ public class AutoAnchor extends Module implements TickListener, Render3DListener
 
 	@Override
 	public void onTick(TickEvent.Pre event) {
+		if (MC.player == null || MC.level == null || MC.gameMode == null || !MC.player.isAlive())
+			return;
+
+		// Anchors only explode in dimensions where they cannot set your spawn (not the Nether).
+		if (anchorsAreSafeHere()) {
+			if (!warnedSafeDimension) {
+				sendChatMessage("AutoAnchor: respawn anchors do not explode in this dimension.");
+				warnedSafeDimension = true;
+			}
+			Aoba.getInstance().rotationManager.setGoal(null);
+			return;
+		}
+		warnedSafeDimension = false;
+
+		if (pauseWhileUsing.getValue() && MC.player.isUsingItem()) {
+			Aoba.getInstance().rotationManager.setGoal(null);
+			return;
+		}
+
 		long currentTime = System.currentTimeMillis();
 
 		// Get all targets within the radius
@@ -236,6 +272,9 @@ public class AutoAnchor extends Module implements TickListener, Render3DListener
 				continue;
 
 			if (!(entity instanceof LivingEntity living))
+				continue;
+
+			if (living.isRemoved() || !living.isAlive() || living.isDeadOrDying())
 				continue;
 
 			if (MC.player.distanceToSqr(living) > rangeSq)
@@ -320,7 +359,9 @@ public class AutoAnchor extends Module implements TickListener, Render3DListener
 		// Place a shield if we're about to detonate and the path isn't already
 		// shielded.
 		int charge = MC.level.getBlockState(anchor).getValue(RespawnAnchorBlock.CHARGE);
-		boolean willDetonate = charge >= RespawnAnchorBlock.MAX_CHARGES;
+		boolean canFastDetonate = fastDetonate.getValue() && charge > 0
+				&& !MC.player.getOffhandItem().is(Items.GLOWSTONE) && findDetonateSlot() != -1;
+		boolean willDetonate = charge >= RespawnAnchorBlock.MAX_CHARGES || canFastDetonate;
 		boolean placeClickOk = !placeOnClick.getValue() || MC.options.keyUse.isDown();
 		if (willDetonate && safeAnchor.getValue() && !isShielded(anchor) && placeClickOk) {
 			BlockPos shieldPos = findShieldPosition(anchor);
@@ -334,7 +375,8 @@ public class AutoAnchor extends Module implements TickListener, Render3DListener
 		// Do not detonate if the detonation will cause the player to die.
 		if (willDetonate && antiSuicide.getValue()) {
 			double selfDamage = DamageUtils.anchorDamage(MC.player, Vec3.atCenterOf(anchor));
-			if (selfDamage > maxSelfDamage.getValue()) {
+			if (selfDamage > maxSelfDamage.getValue()
+					|| selfDamage >= MC.player.getHealth() + MC.player.getAbsorptionAmount()) {
 				Aoba.getInstance().rotationManager.setGoal(null);
 				return;
 			}
@@ -350,7 +392,7 @@ public class AutoAnchor extends Module implements TickListener, Render3DListener
 		// charge state).
 		boolean activateClickOk = !activateOnClick.getValue() || MC.options.keyUse.isDown();
 		if (activateClickOk && (nextChargeDelayMs <= 0 || currentTime - lastChargeTime >= nextChargeDelayMs)) {
-			if (chargeAnchor(anchor)) {
+			if (chargeAnchor(anchor, canFastDetonate)) {
 				lastChargeTime = currentTime;
 				nextChargeDelayMs = (long) chargeDelay.randomValue();
 			}
@@ -446,7 +488,8 @@ public class AutoAnchor extends Module implements TickListener, Render3DListener
 
 			if (antiSuicide.getValue()) {
 				double selfDamage = DamageUtils.anchorDamage(MC.player, explosionPos);
-				if (selfDamage > maxSelfDamageAllowed)
+				if (selfDamage > maxSelfDamageAllowed
+						|| selfDamage >= MC.player.getHealth() + MC.player.getAbsorptionAmount())
 					continue;
 			}
 
@@ -589,7 +632,7 @@ public class AutoAnchor extends Module implements TickListener, Render3DListener
 	 * @param anchorPos Position of the respawn anchor.
 	 * @return True if the anchor was charged, false otherwise.
 	 */
-	private boolean chargeAnchor(BlockPos anchorPos) {
+	private boolean chargeAnchor(BlockPos anchorPos, boolean detonate) {
 		// Get nearest face.
 		Direction clickFace = InteractionUtils.getClosestDirection(anchorPos);
 		if (clickFace == null) {
@@ -606,9 +649,15 @@ public class AutoAnchor extends Module implements TickListener, Render3DListener
 						.pitchRandomness(pitchRandomness.getValue()).yawRandomness(yawRandomness.getValue())
 						.fakeRotation(fakeRotation.getValue()).moveFix(moveFix.getValue()).easingFunction(easingFunction.getValue()).build());
 
-		// Verify glowstone is in the hotbar.
-		FindItemResult glowstone = find(Items.GLOWSTONE);
-		if (!glowstone.found() || !glowstone.isHotbar()) {
+		// Detonating uses any non-glowstone item, charging needs glowstone.
+		int slot;
+		if (detonate) {
+			slot = findDetonateSlot();
+		} else {
+			FindItemResult glowstone = find(Items.GLOWSTONE);
+			slot = glowstone.found() && glowstone.isHotbar() ? glowstone.slot() : -1;
+		}
+		if (slot == -1) {
 			Aoba.getInstance().rotationManager.setGoal(null);
 			return false;
 		}
@@ -625,8 +674,11 @@ public class AutoAnchor extends Module implements TickListener, Render3DListener
 			return false;
 
 		// Swap only after we've confirmed we'll actually click.
-		if (autoSwitch.getValue())
-			swap(glowstone.slot(), false);
+		if (MC.player.getInventory().getSelectedSlot() != slot) {
+			if (!autoSwitch.getValue())
+				return false;
+			swap(slot, false);
+		}
 
 		SwingAnimation swingAnimation = MC.player.getMainHandItem().getInteractAnimation();
 		InteractionResult useResult = MC.gameMode.useItemOn(MC.player, InteractionHand.MAIN_HAND, hit);
@@ -634,6 +686,31 @@ public class AutoAnchor extends Module implements TickListener, Render3DListener
 				&& success.swingSource() == InteractionResult.SwingSource.PREDICTED)
 			MC.player.swing(InteractionHand.MAIN_HAND, swingAnimation, false);
 		return true;
+	}
+
+	/**
+	 * Finds a hotbar slot that can detonate a charged anchor: anything that is not
+	 * glowstone and will not place a block instead. Prefers the current slot,
+	 * then totems, then empty slots.
+	 */
+	private int findDetonateSlot() {
+		int selected = MC.player.getInventory().getSelectedSlot();
+		if (isDetonateItem(MC.player.getInventory().getItem(selected)))
+			return selected;
+		int totem = InventoryUtils.findHotbarSlot(stack -> stack.is(Items.TOTEM_OF_UNDYING));
+		if (totem != -1)
+			return totem;
+		return InventoryUtils.findHotbarSlot(AutoAnchor::isDetonateItem);
+	}
+
+	private static boolean isDetonateItem(ItemStack stack) {
+		return !stack.is(Items.GLOWSTONE) && !(stack.getItem() instanceof BlockItem);
+	}
+
+	/** True when respawn anchors work normally here and therefore never explode. */
+	private static boolean anchorsAreSafeHere() {
+		return MC.level.environmentAttributes().getValue(EnvironmentAttributes.RESPAWN_ANCHOR_WORKS,
+				MC.player.blockPosition());
 	}
 
 	/**
