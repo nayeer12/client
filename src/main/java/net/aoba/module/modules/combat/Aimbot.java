@@ -8,7 +8,6 @@
 
 package net.aoba.module.modules.combat;
 
-import java.util.ArrayList;
 import java.util.Set;
 
 import net.aoba.Aoba;
@@ -32,7 +31,6 @@ import net.aoba.utils.entity.BodyPart;
 import net.aoba.utils.entity.EntityUtils;
 import net.aoba.utils.entity.TargetPriority;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -48,7 +46,7 @@ public class Aimbot extends Module implements SubtickListener, Render3DListener 
 
 	private final EnumSetting<TargetPriority> targetPriority = EnumSetting.<TargetPriority>builder()
 			.id("aimbot_target_priority").displayName("Target Priority")
-			.description("The priority used to pick which target to aim towards.").defaultValue(TargetPriority.CLOSEST)
+			.description("The priority used to pick which target to aim towards.").defaultValue(TargetPriority.CROSSHAIR)
 			.build();
 
 	private final EnumSetting<BodyPart> bodyPart = EnumSetting.<BodyPart>builder().id("aimbot_body_part")
@@ -118,6 +116,19 @@ public class Aimbot extends Module implements SubtickListener, Render3DListener 
 			.description("Corrects movement to match spoofed rotation by using the server yaw for velocity.")
 			.defaultValue(false).build();
 
+	private final BooleanSetting stickyTarget = BooleanSetting.builder().id("aimbot_sticky_target")
+			.displayName("Sticky Target")
+			.description("Keep aiming at the current target while it stays valid instead of switching targets.")
+			.defaultValue(true).build();
+
+	private final BooleanSetting aimOnClick = BooleanSetting.builder().id("aimbot_aim_on_click")
+			.displayName("Aim On Click").description("Only aim while the attack key is held down.")
+			.defaultValue(false).build();
+
+	private final BooleanSetting pauseInScreens = BooleanSetting.builder().id("aimbot_pause_in_screens")
+			.displayName("Pause In Screens").description("Do not aim while a menu or inventory is open.")
+			.defaultValue(true).build();
+
 	private final ShaderSetting targetColor = ShaderSetting.builder().id("aimbot_target_color")
 			.displayName("Target Color").description("Color of the box drawn at the target position.")
 			.defaultValue(Shader.solid(new Color(255, 0, 0))).build();
@@ -145,6 +156,9 @@ public class Aimbot extends Module implements SubtickListener, Render3DListener 
 		addSetting(pitchRandomness);
 		addSetting(fakeRotation);
 		addSetting(moveFix);
+		addSetting(stickyTarget);
+		addSetting(aimOnClick);
+		addSetting(pauseInScreens);
 		addSetting(targetColor);
 	}
 
@@ -169,49 +183,34 @@ public class Aimbot extends Module implements SubtickListener, Render3DListener 
 
 	@Override
 	public void onSubtick(SubtickEvent event) {
+		if (MC.player == null || MC.level == null || !canAim()) {
+			clearTarget();
+			return;
+		}
+
 		float partialTick = MC.getDeltaTracker().getGameTimeDeltaPartialTick(true);
 		Vec3 playerPos = MC.player.getPosition(partialTick);
 
-		float radiusSqr = radius.getValueSqr();
-		ArrayList<LivingEntity> hitList = new ArrayList<LivingEntity>();
+		// Keep the current target while it is still valid so the aim does not jump
+		// between entities.
+		LivingEntity entityFound = null;
+		if (stickyTarget.getValue() && currentTarget != null && isValidTarget(currentTarget, playerPos, partialTick))
+			entityFound = currentTarget;
 
-		Set<EntityType<?>> allowed = targetEntities.getValue();
-		if (!allowed.isEmpty()) {
+		if (entityFound == null) {
+			double bestScore = Double.MAX_VALUE;
 			for (Entity entity : Aoba.getInstance().entityManager.getEntities()) {
 				if (!(entity instanceof LivingEntity living))
 					continue;
-
-				if (entity == MC.player)
+				if (!isValidTarget(living, playerPos, partialTick))
 					continue;
 
-				if (!allowed.contains(entity.getType()))
-					continue;
-
-				if (entity.getPosition(partialTick).distanceToSqr(playerPos) >= radiusSqr)
-					continue;
-
-				if (!shouldTarget(living, partialTick))
-					continue;
-
-				hitList.add(living);
-			}
-		}
-
-		LivingEntity entityFound = null;
-		for (LivingEntity entity : hitList) {
-			if (entityFound == null) {
-				entityFound = entity;
-			} else if (targetPriority.getValue() == TargetPriority.LOWEST_HEALTH) {
-				if (entity.getHealth() <= entityFound.getHealth()) {
-					entityFound = entity;
+				double distSqr = playerPos.distanceToSqr(living.getPosition(partialTick));
+				double score = targetPriority.getValue().score(living, distSqr, 0);
+				if (score < bestScore) {
+					bestScore = score;
+					entityFound = living;
 				}
-			} else if (targetPriority.getValue() == TargetPriority.MOST_HEALTH) {
-				if (entity.getHealth() >= entityFound.getHealth()) {
-					entityFound = entity;
-				}
-			} else if (playerPos.distanceToSqr(entity.getPosition(partialTick)) <= playerPos
-					.distanceToSqr(entityFound.getPosition(partialTick))) {
-				entityFound = entity;
 			}
 		}
 
@@ -224,9 +223,33 @@ public class Aimbot extends Module implements SubtickListener, Render3DListener 
 			Aoba.getInstance().rotationManager.setGoal(rotation);
 			currentTarget = entityFound;
 		} else {
-			Aoba.getInstance().rotationManager.setGoal(null);
-			currentTarget = null;
+			clearTarget();
 		}
+	}
+
+	private boolean canAim() {
+		if (pauseInScreens.getValue()
+				&& (MC.gui.screen() != null || Aoba.getInstance().guiManager.isClickGuiOpen()))
+			return false;
+		if (aimOnClick.getValue() && !MC.options.keyAttack.isDown())
+			return false;
+		return MC.player.isAlive() && !MC.player.isSpectator();
+	}
+
+	private void clearTarget() {
+		if (currentTarget != null)
+			Aoba.getInstance().rotationManager.setGoal(null);
+		currentTarget = null;
+	}
+
+	private boolean isValidTarget(LivingEntity entity, Vec3 playerPos, float partialTick) {
+		if (entity == MC.player || entity.isRemoved())
+			return false;
+		if (!targetEntities.getValue().contains(entity.getType()))
+			return false;
+		if (entity.getPosition(partialTick).distanceToSqr(playerPos) >= radius.getValueSqr())
+			return false;
+		return shouldTarget(entity, partialTick);
 	}
 
 	@Override
@@ -245,7 +268,7 @@ public class Aimbot extends Module implements SubtickListener, Render3DListener 
 		if (!EntityUtils.isInFOV(entity, bodyPart.getValue(), fov.getValue(), partialTick))
 			return false;
 
-		if (ignoreDead.getValue() && !entity.isAlive())
+		if (ignoreDead.getValue() && (!entity.isAlive() || entity.isDeadOrDying()))
 			return false;
 
 		if (ignoreInvisible.getValue() && entity.isInvisible())
@@ -262,15 +285,20 @@ public class Aimbot extends Module implements SubtickListener, Render3DListener 
 				return false;
 		}
 
-		// Perform raycast to skip players not visible.
+		// Skip targets that are not visible. A target counts as visible when either
+		// its eyes or the aimed body part can be seen.
 		if (useRaycast.getValue()) {
 			Vec3 eyePos = MC.player.getEyePosition(partialTick);
-			Vec3 targetEyePos = entity.getEyePosition(partialTick);
-			BlockHitResult hit = MC.level.clip(new ClipContext(eyePos, targetEyePos, ClipContext.Block.COLLIDER,
-					ClipContext.Fluid.NONE, MC.player));
-			if (hit.getType() != HitResult.Type.MISS)
+			if (!canSee(eyePos, entity.getEyePosition(partialTick))
+					&& !canSee(eyePos, EntityUtils.getBodyPartPosition(entity, bodyPart.getValue(), partialTick)))
 				return false;
 		}
 		return true;
+	}
+
+	private static boolean canSee(Vec3 from, Vec3 to) {
+		BlockHitResult hit = MC.level
+				.clip(new ClipContext(from, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, MC.player));
+		return hit.getType() == HitResult.Type.MISS;
 	}
 }

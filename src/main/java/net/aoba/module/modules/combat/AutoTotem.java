@@ -9,60 +9,84 @@
 package net.aoba.module.modules.combat;
 
 import net.aoba.Aoba;
-import net.aoba.event.events.PlayerHealthEvent;
 import net.aoba.event.events.ReceivePacketEvent;
-import net.aoba.event.listeners.PlayerHealthListener;
+import net.aoba.event.events.TickEvent;
 import net.aoba.event.listeners.ReceivePacketListener;
+import net.aoba.event.listeners.TickListener;
 import net.aoba.module.Category;
 import net.aoba.module.Module;
 import net.aoba.settings.types.BooleanSetting;
+import net.aoba.settings.types.EnumSetting;
 import net.aoba.settings.types.FloatSetting;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.inventory.ContainerScreen;
+import net.aoba.utils.player.InventoryUtils;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
-import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
-public class AutoTotem extends Module implements PlayerHealthListener, ReceivePacketListener {
+public class AutoTotem extends Module implements TickListener, ReceivePacketListener {
+	public enum Mode {
+		/** Always keep a totem in the off-hand. */
+		Always,
+		/** Only equip a totem when in danger. */
+		Danger
+	}
+
+	private final EnumSetting<Mode> mode = EnumSetting.<Mode>builder().id("autototem_mode").displayName("Mode")
+			.description("Always: keep a totem in the off-hand at all times. Danger: only when health is low or a threat is near.")
+			.defaultValue(Mode.Always).build();
 
 	private final FloatSetting healthTrigger = FloatSetting.builder().id("autototem_health").displayName("Health")
-			.description("The health at which the totem will be placed into your hand.").defaultValue(6.0f)
-			.minValue(1.0f).maxValue(20.0f).step(1.0f).build();
+			.description("Health (including absorption) at or below which you are considered in danger.")
+			.defaultValue(10.0f).minValue(1.0f).maxValue(36.0f).step(1.0f).build();
 
 	private final FloatSetting crystalRadiusTrigger = FloatSetting.builder().id("autototem_crystal_radius")
 			.displayName("Crystal Radius")
-			.description("The radius at which a placed end crystal will trigger autototem.").defaultValue(6.0f)
-			.minValue(1.0f).maxValue(10.0f).step(1.0f).build();
+			.description("An end crystal spawning within this radius counts as danger.").defaultValue(6.0f)
+			.minValue(1.0f).maxValue(12.0f).step(1.0f).build();
 
-	private final BooleanSetting mainHand = BooleanSetting.builder().id("autototem_mainhand").displayName("Mainhand")
-			.description("Places totem in main hand instead of off-hand").defaultValue(false).build();
+	private final BooleanSetting fallCheck = BooleanSetting.builder().id("autototem_fall_check")
+			.displayName("Fall Check").description("A fall that would kill you counts as danger.").defaultValue(true)
+			.build();
+
+	private final BooleanSetting mainHand = BooleanSetting.builder().id("autototem_mainhand").displayName("Main Hand")
+			.description("When in danger, also select a totem from the hotbar for your main hand.")
+			.defaultValue(false).build();
+
+	private final FloatSetting delay = FloatSetting.builder().id("autototem_delay").displayName("Delay")
+			.description("Ticks to wait between inventory moves. Higher is safer on laggy servers.").defaultValue(0f)
+			.minValue(0f).maxValue(20f).step(1f).build();
+
+	private int ticksSinceMove;
+	private volatile boolean crystalThreat;
 
 	public AutoTotem() {
 		super("AutoTotem");
 
 		setCategory(Category.of("Combat"));
-		setDescription("Automatically replaced totems.");
+		setDescription("Keeps a Totem of Undying in your off-hand.");
 
+		addSetting(mode);
 		addSetting(healthTrigger);
 		addSetting(crystalRadiusTrigger);
+		addSetting(fallCheck);
 		addSetting(mainHand);
+		addSetting(delay);
 	}
 
 	@Override
 	public void onDisable() {
-		Aoba.getInstance().eventManager.RemoveListener(PlayerHealthListener.class, this);
+		Aoba.getInstance().eventManager.RemoveListener(TickListener.class, this);
 		Aoba.getInstance().eventManager.RemoveListener(ReceivePacketListener.class, this);
 	}
 
 	@Override
 	public void onEnable() {
-		Aoba.getInstance().eventManager.AddListener(PlayerHealthListener.class, this);
+		Aoba.getInstance().eventManager.AddListener(TickListener.class, this);
 		Aoba.getInstance().eventManager.AddListener(ReceivePacketListener.class, this);
+		ticksSinceMove = Integer.MAX_VALUE / 2;
+		crystalThreat = false;
 	}
 
 	@Override
@@ -71,68 +95,77 @@ public class AutoTotem extends Module implements PlayerHealthListener, ReceivePa
 	}
 
 	@Override
-	public void onHealthChanged(PlayerHealthEvent readPacketEvent) {
-		// If current screen is a generic container, we want to prevent autototem from
-		// firing.
-		if (MC.gui.screen() instanceof ContainerScreen)
+	public void onTick(TickEvent.Pre event) {
+		LocalPlayer player = MC.player;
+		if (player == null || !player.isAlive())
 			return;
 
-		if(MC.player == null)
-			return;
-		
-		// If the current hand stack is a totem, return;
-		Inventory inventory = MC.player.getInventory();
-		ItemStack handItemStack = inventory.getSelectedItem();
+		ticksSinceMove++;
+		boolean danger = isInDanger(player);
+		crystalThreat = false;
 
-		if (handItemStack.getItem() == Items.TOTEM_OF_UNDYING)
+		if (mode.getValue() == Mode.Danger && !danger)
 			return;
 
-		// If the player health is below the Health Trigger, switch to the totem
-		if (readPacketEvent.getHealth() <= healthTrigger.getValue()) {
-			SwitchToTotem();
-		}
-	}
-
-	private void SwitchToTotem() {
-		Minecraft mc = Minecraft.getInstance();
-
-		Inventory inventory = mc.player.getInventory();
-
-		int slot = -1;
-		for (int i = 0; i <= 36; i++) {
-			ItemStack itemStackToCheck = inventory.getItem(i);
-			Item itemToCheck = itemStackToCheck.getItem();
-
-			if (itemToCheck == Items.TOTEM_OF_UNDYING) {
-				slot = i;
-				break;
-			}
+		if (mainHand.getValue() && danger && !isTotem(player.getMainHandItem())) {
+			int hotbarTotem = InventoryUtils.findHotbarSlot(AutoTotem::isTotem);
+			if (hotbarTotem != -1)
+				swap(hotbarTotem, false);
 		}
 
-		if (slot != -1) {
-			mc.gameMode.handleInventoryButtonClick(mc.player.containerMenu.containerId, slot);
-			mc.player.setItemInHand(InteractionHand.OFF_HAND, inventory.getItem(slot));
-		}
+		equipOffhandTotem(player);
 	}
 
 	@Override
-	public void onReceivePacket(ReceivePacketEvent readPacketEvent) {
-		// Check to see if the packet is an entity spawn packet, and if the entity is an
-		// end crystal.
-		if (readPacketEvent.GetPacket() instanceof ClientboundAddEntityPacket spawnEntityPacket) {
-			if (spawnEntityPacket.getType() == EntityTypes.END_CRYSTAL) {
-				// Check if the entity is within the range of the player, and switch immediately
-				// if so.
-				Minecraft mc = Minecraft.getInstance();
+	public void onTick(TickEvent.Post event) {
+	}
 
-				if (mc.player.getInventory().getSelectedItem().getItem() == Items.TOTEM_OF_UNDYING)
-					return;
+	@Override
+	public void onReceivePacket(ReceivePacketEvent event) {
+		if (MC.player == null)
+			return;
 
-				if (mc.player.distanceToSqr(spawnEntityPacket.getX(), spawnEntityPacket.getY(),
-						spawnEntityPacket.getZ()) < Math.pow(crystalRadiusTrigger.getValue(), 2)) {
-					SwitchToTotem();
-				}
-			}
+		// React the moment a crystal spawns nearby instead of waiting for damage.
+		if (event.GetPacket() instanceof ClientboundAddEntityPacket spawn && spawn.getType() == EntityTypes.END_CRYSTAL) {
+			double distSqr = MC.player.distanceToSqr(spawn.getX(), spawn.getY(), spawn.getZ());
+			if (distSqr <= crystalRadiusTrigger.getValueSqr())
+				crystalThreat = true;
 		}
+	}
+
+	private void equipOffhandTotem(LocalPlayer player) {
+		if (isTotem(player.getOffhandItem()))
+			return;
+		if (ticksSinceMove < delay.getValue())
+			return;
+
+		// Prefer the main inventory so hotbar totems remain available for the main hand.
+		int slot = InventoryUtils.findSlot(AutoTotem::isTotem, true);
+		if (slot == -1)
+			return;
+
+		if (InventoryUtils.swapWithOffhand(slot))
+			ticksSinceMove = 0;
+	}
+
+	private boolean isInDanger(LocalPlayer player) {
+		float health = player.getHealth() + player.getAbsorptionAmount();
+		if (health <= healthTrigger.getValue())
+			return true;
+		if (crystalThreat)
+			return true;
+		if (fallCheck.getValue() && !player.onGround() && !player.isFallFlying() && !player.isInWater()
+				&& player.fallDistance - 3.0 >= health)
+			return true;
+		return false;
+	}
+
+	private static boolean isTotem(ItemStack stack) {
+		return stack.is(Items.TOTEM_OF_UNDYING);
+	}
+
+	/** Number of totems left, including the off-hand. */
+	public int getTotemCount() {
+		return MC.player == null ? 0 : InventoryUtils.count(AutoTotem::isTotem);
 	}
 }

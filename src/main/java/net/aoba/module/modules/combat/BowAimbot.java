@@ -8,7 +8,6 @@
 
 package net.aoba.module.modules.combat;
 
-import java.util.ArrayList;
 import java.util.Set;
 
 import net.aoba.Aoba;
@@ -27,7 +26,6 @@ import net.aoba.utils.entity.BodyPart;
 import net.aoba.utils.entity.EntityUtils;
 import net.aoba.utils.entity.TargetPriority;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -35,6 +33,9 @@ import net.minecraft.world.item.BowItem;
 import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 public class BowAimbot extends Module implements SubtickListener {
@@ -49,7 +50,7 @@ public class BowAimbot extends Module implements SubtickListener {
 	private final EnumSetting<TargetPriority> targetPriority = EnumSetting.<TargetPriority>builder()
 			.id("bowaimbot_target_priority").displayName("Target Priority")
 			.description("The priority used to pick which target to aim towards.")
-			.defaultValue(TargetPriority.CLOSEST).build();
+			.defaultValue(TargetPriority.CROSSHAIR).build();
 
 	private final EnumSetting<BodyPart> bodyPart = EnumSetting.<BodyPart>builder().id("bowaimbot_body_part")
 			.displayName("Body Part").description("The part of the target's body to aim at.")
@@ -75,9 +76,31 @@ public class BowAimbot extends Module implements SubtickListener {
 			.description("How frequent the aimbot updates (Lower = Laggier)").defaultValue(1.0f).minValue(1.0f)
 			.maxValue(20.0f).step(1.0f).build();
 
-	private final FloatSetting predictMovement = FloatSetting.builder().id("bowaimbot_prediction")
-			.displayName("Prediction").description("Sets the strength of BowAimbot's movement prediction")
-			.defaultValue(2f).minValue(0f).maxValue(10f).step(1f).build();
+	private final FloatSetting predictMovement = FloatSetting.builder().id("bowaimbot_prediction_strength")
+			.displayName("Prediction")
+			.description("How far ahead of a moving target to aim. 1.0 leads by the arrow's flight time.")
+			.defaultValue(1f).minValue(0f).maxValue(2f).step(0.05f).build();
+
+	private final FloatSetting range = FloatSetting.builder().id("bowaimbot_range").displayName("Range")
+			.description("Maximum distance to a target.").defaultValue(80f).minValue(5f).maxValue(200f).step(1f)
+			.build();
+
+	private final FloatSetting fov = FloatSetting.builder().id("bowaimbot_fov").displayName("FOV")
+			.description("Angular cone in front of the player that targets must fall within.").defaultValue(120f)
+			.minValue(1f).maxValue(360f).step(1f).build();
+
+	private final BooleanSetting useRaycast = BooleanSetting.builder().id("bowaimbot_use_raycast")
+			.displayName("Use Raycast").description("Skips targets that are not in the line of sight of the player.")
+			.defaultValue(true).build();
+
+	private final BooleanSetting stickyTarget = BooleanSetting.builder().id("bowaimbot_sticky_target")
+			.displayName("Sticky Target")
+			.description("Keep aiming at the current target while it stays valid instead of switching targets.")
+			.defaultValue(true).build();
+
+	private final BooleanSetting showTrajectory = BooleanSetting.builder().id("bowaimbot_show_trajectory")
+			.displayName("Show Trajectory").description("Turns on the Trajectory module while BowAimbot is enabled.")
+			.defaultValue(true).build();
 
 	private final EnumSetting<RotationMode> rotationMode = EnumSetting.<RotationMode>builder()
 			.id("bowaimbot_rotation_mode").displayName("Rotation Mode")
@@ -104,12 +127,16 @@ public class BowAimbot extends Module implements SubtickListener {
 			.description("Corrects movement to match spoofed rotation by using the server yaw for velocity.")
 			.defaultValue(false).build();
 
+	/** Arrow gravity per tick, normalised so that a full-power shot has speed 1. */
+	private static final double NORMALISED_GRAVITY = 0.006;
+	/** Speed of a fully drawn bow arrow in blocks per tick. */
+	private static final double FULL_POWER_SPEED = 3.0;
+	/** Speed of a crossbow arrow in blocks per tick. */
+	private static final double CROSSBOW_SPEED = 3.15;
+
 	private int currentTick = 0;
-	private float velocity;
-	private double posX;
-	private double posY;
-	private double posZ;
-	private double d;
+	private LivingEntity currentTarget;
+	private boolean enabledTrajectory;
 
 	public BowAimbot() {
 		super("BowAimbot");
@@ -127,6 +154,11 @@ public class BowAimbot extends Module implements SubtickListener {
 		addSetting(ignoreNPCs);
 		addSetting(frequency);
 		addSetting(predictMovement);
+		addSetting(range);
+		addSetting(fov);
+		addSetting(useRaycast);
+		addSetting(stickyTarget);
+		addSetting(showTrajectory);
 		addSetting(rotationMode);
 		addSetting(maxRotation);
 		addSetting(yawRandomness);
@@ -137,15 +169,22 @@ public class BowAimbot extends Module implements SubtickListener {
 
 	@Override
 	public void onDisable() {
-		if (Aoba.getInstance().moduleManager.trajectory.state.getValue())
+		// Only turn Trajectory off if BowAimbot was the one that turned it on.
+		if (enabledTrajectory && Aoba.getInstance().moduleManager.trajectory.state.getValue())
 			Aoba.getInstance().moduleManager.trajectory.toggle();
+		enabledTrajectory = false;
 		Aoba.getInstance().eventManager.RemoveListener(SubtickListener.class, this);
+		Aoba.getInstance().rotationManager.setGoal(null);
+		currentTarget = null;
 	}
 
 	@Override
 	public void onEnable() {
-		if (!Aoba.getInstance().moduleManager.trajectory.state.getValue())
+		enabledTrajectory = false;
+		if (showTrajectory.getValue() && !Aoba.getInstance().moduleManager.trajectory.state.getValue()) {
 			Aoba.getInstance().moduleManager.trajectory.toggle();
+			enabledTrajectory = true;
+		}
 		Aoba.getInstance().eventManager.AddListener(SubtickListener.class, this);
 	}
 
@@ -156,107 +195,142 @@ public class BowAimbot extends Module implements SubtickListener {
 
 	@Override
 	public void onSubtick(SubtickEvent event) {
+		if (MC.player == null || MC.level == null)
+			return;
+
 		currentTick++;
 
 		ItemStack stack = MC.player.getInventory().getSelectedItem();
 		Item item = stack.getItem();
 
-		if (!(item instanceof BowItem || item instanceof CrossbowItem)) {
-			Aoba.getInstance().rotationManager.setGoal(null);
+		// Work out the normalised launch speed of the arrow we are about to fire.
+		double velocity;
+		if (item instanceof BowItem) {
+			if (!MC.player.isUsingItem()) {
+				clearTarget();
+				return;
+			}
+			velocity = BowItem.getPowerForTime(MC.player.getTicksUsingItem());
+		} else if (item instanceof CrossbowItem && CrossbowItem.isCharged(stack)) {
+			velocity = CROSSBOW_SPEED / FULL_POWER_SPEED;
+		} else {
+			clearTarget();
 			return;
 		}
 
-		if (item instanceof BowItem && !MC.options.keyUse.isDown() && !MC.player.isUsingItem()) {
-			Aoba.getInstance().rotationManager.setGoal(null);
-			return;
-		}
-		if (item instanceof CrossbowItem && !CrossbowItem.isCharged(stack)) {
-			Aoba.getInstance().rotationManager.setGoal(null);
+		// A barely drawn bow cannot reach anything meaningful.
+		if (velocity < 0.1) {
+			clearTarget();
 			return;
 		}
 
-		if (currentTick >= frequency.getValue()) {
-			float partialTick = MC.getDeltaTracker().getGameTimeDeltaPartialTick(true);
-			Vec3 playerPos = MC.player.getPosition(partialTick);
+		if (currentTick < frequency.getValue())
+			return;
+		currentTick = 0;
 
-			velocity = (72000 - MC.player.getUseItemRemainingTicks()) / 20F;
-			velocity = (velocity * velocity + velocity * 2) / 3;
-			if (velocity > 1)
-				velocity = 1;
+		float partialTick = MC.getDeltaTracker().getGameTimeDeltaPartialTick(true);
+		Vec3 eyePos = MC.player.getEyePosition(partialTick);
 
-			ArrayList<LivingEntity> hitList = new ArrayList<LivingEntity>();
+		LivingEntity target = null;
+		if (stickyTarget.getValue() && currentTarget != null && isValidTarget(currentTarget, eyePos, partialTick))
+			target = currentTarget;
 
-			// Add all potential entities to the 'hitlist'
-			Set<EntityType<?>> allowed = targetEntities.getValue();
-			if (!allowed.isEmpty()) {
-				for (Entity entity : Aoba.getInstance().entityManager.getEntities()) {
-					if (!(entity instanceof LivingEntity living))
-						continue;
-
-					if (entity == MC.player)
-						continue;
-
-					if (!allowed.contains(entity.getType()))
-						continue;
-
-					if (!shouldTarget(living))
-						continue;
-
-					hitList.add(living);
+		if (target == null) {
+			double bestScore = Double.MAX_VALUE;
+			for (Entity entity : Aoba.getInstance().entityManager.getEntities()) {
+				if (!(entity instanceof LivingEntity living) || !isValidTarget(living, eyePos, partialTick))
+					continue;
+				double score = targetPriority.getValue().score(living, eyePos.distanceToSqr(living.position()), 0);
+				if (score < bestScore) {
+					bestScore = score;
+					target = living;
 				}
 			}
-
-			// Pick the best candidate based on priority.
-			LivingEntity temp = null;
-			for (LivingEntity entity : hitList) {
-				if (temp == null) {
-					temp = entity;
-				} else if (targetPriority.getValue() == TargetPriority.LOWEST_HEALTH) {
-					if (entity.getHealth() <= temp.getHealth())
-						temp = entity;
-				} else if (targetPriority.getValue() == TargetPriority.MOST_HEALTH) {
-					if (entity.getHealth() >= temp.getHealth())
-						temp = entity;
-				} else if (playerPos.distanceToSqr(entity.getPosition(partialTick)) <= playerPos
-						.distanceToSqr(temp.getPosition(partialTick))) {
-					temp = entity;
-				}
-			}
-
-			if (temp != null) {
-				double hDistance = Math.sqrt(posX * posX + posZ * posZ);
-				double hDistanceSq = hDistance * hDistance;
-				float g = 0.006F;
-				float velocitySq = velocity * velocity;
-				float velocityPow4 = velocitySq * velocitySq;
-
-				Vec3 aimPos = EntityUtils.getBodyPartPosition(temp, bodyPart.getValue(), partialTick);
-
-				d = temp.distanceToSqr(MC.player.getEyePosition(partialTick)) * (predictMovement.getValue() / 100);
-				posY = aimPos.y + (temp.getY() - temp.yOld) * d - playerPos.y
-						- MC.player.getEyeHeight(MC.player.getPose());
-				float neededPitch = (float) -Math.toDegrees(
-						Math.atan((velocitySq - Math.sqrt(velocityPow4 - g * (g * hDistanceSq + 2 * posY * velocitySq)))
-								/ (g * hDistance)));
-				posZ = aimPos.z + (temp.getZ() - temp.zOld) * d - playerPos.z;
-				posX = aimPos.x + (temp.getX() - temp.xOld) * d - playerPos.x;
-				float neededYaw = (float) Math.toDegrees(Math.atan2(posZ, posX)) - 90;
-
-				currentTick = 0;
-
-				Rotation rotation = new Rotation(neededYaw, neededPitch);
-				RotationGoal goal = RotationGoal.builder().goal(rotation).mode(rotationMode.getValue())
-						.maxRotation(maxRotation.getValue()).yawRandomness(yawRandomness.getValue())
-						.pitchRandomness(pitchRandomness.getValue()).fakeRotation(fakeRotation.getValue())
-						.moveFix(moveFix.getValue()).build();
-				Aoba.getInstance().rotationManager.setGoal(goal);
-			} else
-				Aoba.getInstance().rotationManager.setGoal(null);
 		}
+
+		if (target == null) {
+			clearTarget();
+			return;
+		}
+		currentTarget = target;
+
+		// Lead the target by its current velocity multiplied by the arrow's flight time.
+		Vec3 aimPos = EntityUtils.getBodyPartPosition(target, bodyPart.getValue(), partialTick);
+		Vec3 targetVelocity = new Vec3(target.getX() - target.xOld, target.getY() - target.yOld,
+				target.getZ() - target.zOld);
+		double flatDistance = Math.hypot(aimPos.x - eyePos.x, aimPos.z - eyePos.z);
+		double flightTicks = flatDistance / (velocity * FULL_POWER_SPEED);
+		aimPos = aimPos.add(targetVelocity.scale(flightTicks * predictMovement.getValue()));
+
+		double dx = aimPos.x - eyePos.x;
+		double dy = aimPos.y - eyePos.y;
+		double dz = aimPos.z - eyePos.z;
+		double horizontal = Math.hypot(dx, dz);
+
+		float neededPitch = solvePitch(horizontal, dy, velocity);
+		if (Float.isNaN(neededPitch)) {
+			// Out of range: aim at the angle with the longest reach.
+			neededPitch = -45f;
+		}
+		float neededYaw = (float) Math.toDegrees(Math.atan2(dz, dx)) - 90f;
+
+		RotationGoal goal = RotationGoal.builder().goal(new Rotation(neededYaw, neededPitch))
+				.mode(rotationMode.getValue()).maxRotation(maxRotation.getValue())
+				.yawRandomness(yawRandomness.getValue()).pitchRandomness(pitchRandomness.getValue())
+				.fakeRotation(fakeRotation.getValue()).moveFix(moveFix.getValue()).build();
+		Aoba.getInstance().rotationManager.setGoal(goal);
+	}
+
+	/**
+	 * Solves for the low-arc launch pitch needed to hit a point.
+	 *
+	 * @param horizontal Horizontal distance to the point.
+	 * @param dy         Height of the point relative to the shooter's eyes.
+	 * @param velocity   Normalised launch speed (1.0 = fully drawn bow).
+	 * @return Minecraft pitch in degrees (negative is up), or NaN if the point is
+	 *         out of range.
+	 */
+	static float solvePitch(double horizontal, double dy, double velocity) {
+		double g = NORMALISED_GRAVITY;
+		double v2 = velocity * velocity;
+		if (horizontal < 1.0E-6)
+			return dy >= 0 ? -90f : 90f;
+		double discriminant = v2 * v2 - g * (g * horizontal * horizontal + 2 * dy * v2);
+		if (discriminant < 0)
+			return Float.NaN;
+		double angle = Math.atan((v2 - Math.sqrt(discriminant)) / (g * horizontal));
+		return (float) -Math.toDegrees(angle);
+	}
+
+	private void clearTarget() {
+		if (currentTarget != null)
+			Aoba.getInstance().rotationManager.setGoal(null);
+		currentTarget = null;
+	}
+
+	private boolean isValidTarget(LivingEntity entity, Vec3 eyePos, float partialTick) {
+		if (entity == MC.player || entity.isRemoved())
+			return false;
+		if (!targetEntities.getValue().contains(entity.getType()))
+			return false;
+		if (entity.getEyePosition(partialTick).distanceToSqr(eyePos) > range.getValueSqr())
+			return false;
+		if (!EntityUtils.isInFOV(entity, bodyPart.getValue(), fov.getValue(), partialTick))
+			return false;
+		if (useRaycast.getValue() && !canSee(eyePos, entity.getEyePosition(partialTick))
+				&& !canSee(eyePos, entity.getBoundingBox().getCenter()))
+			return false;
+		return shouldTarget(entity);
+	}
+
+	private static boolean canSee(Vec3 from, Vec3 to) {
+		BlockHitResult hit = MC.level
+				.clip(new ClipContext(from, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, MC.player));
+		return hit.getType() == HitResult.Type.MISS;
 	}
 
 	private boolean shouldTarget(LivingEntity entity) {
-		if (ignoreDead.getValue() && !entity.isAlive())
+		if (ignoreDead.getValue() && (!entity.isAlive() || entity.isDeadOrDying()))
 			return false;
 
 		if (ignoreInvisible.getValue() && entity.isInvisible())

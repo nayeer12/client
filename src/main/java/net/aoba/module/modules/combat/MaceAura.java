@@ -19,17 +19,19 @@ import net.aoba.module.Module;
 import net.aoba.settings.types.BooleanSetting;
 import net.aoba.settings.types.FloatSetting;
 import net.aoba.utils.player.InteractionUtils;
+import net.aoba.utils.player.InventoryUtils;
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
 
 public class MaceAura extends Module implements SubtickListener, TickListener {
 	private final FloatSetting radius = FloatSetting.builder().id("maceaura_radius").displayName("Radius")
-			.description("Radius that MaceAura will trigger").defaultValue(5f).minValue(0.1f).maxValue(10f).step(0.1f)
+			.description("Distance to the target's hitbox at which MaceAura will trigger.").defaultValue(3f).minValue(0.5f).maxValue(6f).step(0.1f)
 			.build();
 
 	private final FloatSetting height = FloatSetting.builder().id("maceaura_height").displayName("Height")
@@ -52,6 +54,18 @@ public class MaceAura extends Module implements SubtickListener, TickListener {
 			.displayName("Trigger On Click").description("Only attack while the attack key is held down.")
 			.defaultValue(false).build();
 
+	private final BooleanSetting ignoreInvisible = BooleanSetting.builder().id("maceaura_ignore_invisible")
+			.displayName("Ignore Invisible").description("Skip entities that are invisible.").defaultValue(false)
+			.build();
+
+	private final BooleanSetting autoSwitch = BooleanSetting.builder().id("maceaura_auto_switch")
+			.displayName("Auto Switch").description("Switch to a mace in your hotbar before smashing.")
+			.defaultValue(true).build();
+
+	private final BooleanSetting swapBack = BooleanSetting.builder().id("maceaura_swap_back")
+			.displayName("Swap Back").description("Switch back to your previous item after the smash.")
+			.defaultValue(true).build();
+
 	private LivingEntity selectedTarget;
 	private boolean jumped;
 
@@ -69,6 +83,9 @@ public class MaceAura extends Module implements SubtickListener, TickListener {
 		addSetting(targetPlayers);
 		addSetting(targetFriends);
 		addSetting(triggerOnClick);
+		addSetting(ignoreInvisible);
+		addSetting(autoSwitch);
+		addSetting(swapBack);
 
 		setDetectable(
 				AntiCheat.NoCheatPlus,
@@ -87,6 +104,10 @@ public class MaceAura extends Module implements SubtickListener, TickListener {
 	public void onDisable() {
 		Aoba.getInstance().eventManager.RemoveListener(SubtickListener.class, this);
 		Aoba.getInstance().eventManager.RemoveListener(TickListener.class, this);
+
+		// Never leave the server thinking we are still in the air.
+		if (jumped && MC.player != null)
+			sendReturn();
 		selectedTarget = null;
 		jumped = false;
 	}
@@ -95,6 +116,8 @@ public class MaceAura extends Module implements SubtickListener, TickListener {
 	public void onEnable() {
 		Aoba.getInstance().eventManager.AddListener(SubtickListener.class, this);
 		Aoba.getInstance().eventManager.AddListener(TickListener.class, this);
+		selectedTarget = null;
+		jumped = false;
 	}
 
 	@Override
@@ -104,51 +127,50 @@ public class MaceAura extends Module implements SubtickListener, TickListener {
 
 	@Override
 	public void onSubtick(SubtickEvent event) {
-		float partialTick = MC.getDeltaTracker().getGameTimeDeltaPartialTick(true);
-		Vec3 playerPos = MC.player.getPosition(partialTick);
-		float radiusSqr = radius.getValueSqr();
+		if (MC.player == null || MC.level == null)
+			return;
+
+		Vec3 eyePos = MC.player.getEyePosition();
+		double radiusSqr = radius.getValueSqr();
 
 		LivingEntity best = null;
-		double bestDistSqr = 0;
+		double bestDistSqr = Double.MAX_VALUE;
 
-		if (targetAnimals.getValue() || targetMonsters.getValue()) {
-			for (Entity entity : Aoba.getInstance().entityManager.getEntities()) {
-				if (entity == MC.player)
-					continue;
-				if (!((entity instanceof Animal && targetAnimals.getValue())
-						|| (entity instanceof Enemy && targetMonsters.getValue())))
-					continue;
+		for (Entity entity : Aoba.getInstance().entityManager.getEntities()) {
+			if (!(entity instanceof LivingEntity living) || !isValidTarget(living))
+				continue;
 
-				double distSqr = playerPos.distanceToSqr(entity.getPosition(partialTick));
-				if (distSqr > radiusSqr)
-					continue;
+			double distSqr = TriggerBot.distanceSqrToBox(eyePos, living.getBoundingBox());
+			if (distSqr > radiusSqr)
+				continue;
 
-				if (best == null || distSqr < bestDistSqr) {
-					best = (LivingEntity) entity;
-					bestDistSqr = distSqr;
-				}
-			}
-		}
-
-		if (targetPlayers.getValue()) {
-			for (Player player : MC.level.players()) {
-				if (player == MC.player)
-					continue;
-				if (!targetFriends.getValue() && Aoba.getInstance().friendsList.contains(player))
-					continue;
-
-				double distSqr = playerPos.distanceToSqr(player.getPosition(partialTick));
-				if (distSqr > radiusSqr)
-					continue;
-
-				if (best == null || distSqr < bestDistSqr) {
-					best = player;
-					bestDistSqr = distSqr;
-				}
+			if (distSqr < bestDistSqr) {
+				best = living;
+				bestDistSqr = distSqr;
 			}
 		}
 
 		selectedTarget = best;
+	}
+
+	private boolean isValidTarget(LivingEntity entity) {
+		if (entity == MC.player || entity.isRemoved() || !entity.isAlive() || entity.isDeadOrDying())
+			return false;
+		if (ignoreInvisible.getValue() && entity.isInvisible())
+			return false;
+
+		if (entity instanceof Player player) {
+			if (!targetPlayers.getValue())
+				return false;
+			if (!targetFriends.getValue() && Aoba.getInstance().friendsList.contains(player))
+				return false;
+			return true;
+		}
+		if (entity instanceof Animal)
+			return targetAnimals.getValue();
+		if (entity instanceof Enemy)
+			return targetMonsters.getValue();
+		return false;
 	}
 
 	@Override
@@ -158,40 +180,57 @@ public class MaceAura extends Module implements SubtickListener, TickListener {
 
 	@Override
 	public void onTick(TickEvent.Post event) {
-		// if (MC.player.getMainHandStack().getItem() == Items.MACE &&
-		// MC.player.getAttackCooldownProgress(0) == 1) {
-		if (MC.player.getAttackStrengthScale(0) != 1)
+		if (MC.player == null)
 			return;
 
-		if (!jumped) {
-			if (triggerOnClick.getValue() && !MC.options.keyAttack.isDown())
-				return;
-
-			LivingEntity target = selectedTarget;
-			if (target == null || target.isRemoved() || !target.isAlive())
-				return;
-
-			int packetsRequired = Math.round((float) Math.ceil(Math.abs(height.getValue() / 10.0f)));
-			for (int i = 0; i < packetsRequired; i++) {
-				MC.player.connection.send(new ServerboundMovePlayerPacket.StatusOnly(false, false));
-			}
-
-			Vec3 newPos = MC.player.position().add(0, height.getValue(), 0);
-			MC.player.connection.send(new ServerboundMovePlayerPacket.Pos(newPos.x, newPos.y, newPos.z, false, false));
-			jumped = true;
-		} else {
-			int packetsRequired = Math.round((float) Math.ceil(Math.abs(height.getValue() / 10.0f)));
-			for (int i = 0; i < packetsRequired; i++) {
-				MC.player.connection.send(new ServerboundMovePlayerPacket.StatusOnly(false, false));
-			}
-
-			Vec3 newPos = MC.player.position();
-			MC.player.connection.send(new ServerboundMovePlayerPacket.Pos(newPos.x, newPos.y, newPos.z, false, false));
-
-			LivingEntity target = selectedTarget;
-			if (target != null && !target.isRemoved() && target.isAlive())
-				InteractionUtils.attack(target);
+		// Second half: come back down and smash. Always finish once started.
+		if (jumped) {
+			sendReturn();
 			jumped = false;
+
+			LivingEntity target = selectedTarget;
+			if (target != null && isValidTarget(target) && MC.player.getMainHandItem().is(Items.MACE))
+				InteractionUtils.attack(target);
+
+			if (swapBack.getValue())
+				swapBack();
+			return;
 		}
+
+		if (MC.player.getAttackStrengthScale(0) < 1)
+			return;
+		if (triggerOnClick.getValue() && !MC.options.keyAttack.isDown())
+			return;
+
+		LivingEntity target = selectedTarget;
+		if (target == null || !isValidTarget(target))
+			return;
+
+		// Make sure a mace is in hand before going up.
+		if (!MC.player.getMainHandItem().is(Items.MACE)) {
+			if (!autoSwitch.getValue())
+				return;
+			int maceSlot = InventoryUtils.findHotbarSlot(stack -> stack.is(Items.MACE));
+			if (maceSlot == -1)
+				return;
+			swap(maceSlot, swapBack.getValue());
+		}
+
+		sendFillerPackets();
+		Vec3 newPos = MC.player.position().add(0, height.getValue(), 0);
+		MC.player.connection.send(new ServerboundMovePlayerPacket.Pos(newPos.x, newPos.y, newPos.z, false, false));
+		jumped = true;
+	}
+
+	private void sendReturn() {
+		sendFillerPackets();
+		Vec3 pos = MC.player.position();
+		MC.player.connection.send(new ServerboundMovePlayerPacket.Pos(pos.x, pos.y, pos.z, false, false));
+	}
+
+	private void sendFillerPackets() {
+		int packetsRequired = (int) Math.ceil(Math.abs(height.getValue() / 10.0f));
+		for (int i = 0; i < packetsRequired; i++)
+			MC.player.connection.send(new ServerboundMovePlayerPacket.StatusOnly(false, false));
 	}
 }
