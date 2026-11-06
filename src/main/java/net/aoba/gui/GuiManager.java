@@ -126,74 +126,74 @@ public class GuiManager implements KeyDownListener, TickListener, Render2DListen
 	public static BooleanSetting enableTooltips = BooleanSetting.builder().id("enable_tooltips")
 			.displayName("Enable Tooltips").defaultValue(true).build();
 
-	public static ShaderSetting foregroundColor = ShaderSetting.builder().id("ui_foreground_color")
+	public static ShaderSetting foregroundColor = ShaderSetting.builder().id("tw9ine_ui_foreground_color")
 			.displayName("UI Foreground Color").description("Color of the foreground.")
 			.defaultValue(Shader.solid(Colors.White)).build();
 
-	public static ShaderSetting foregroundHeaderColor = ShaderSetting.builder().id("ui_header_foreground_color")
+	public static ShaderSetting foregroundHeaderColor = ShaderSetting.builder().id("tw9ine_ui_header_foreground_color")
 			.displayName("UI Header Foreground Color").description("Color of the header foreground.")
 			.defaultValue(Shader.solid(new Color(236, 238, 240))).build();
 
-	public static ShaderSetting foregroundAccentColor = ShaderSetting.builder().id("ui_accent_foreground_color")
+	public static ShaderSetting foregroundAccentColor = ShaderSetting.builder().id("tw9ine_ui_accent_foreground_color")
 			.displayName("UI Accent Foreground Color").description("Color of the accented foreground.")
 			.defaultValue(Shader.solid(new Color(138, 138, 142))).build();
 
-	public static ShaderSetting windowBorderColor = ShaderSetting.builder().id("ui_window_border_color")
+	public static ShaderSetting windowBorderColor = ShaderSetting.builder().id("tw9ine_ui_window_border_color")
 			.displayName("UI Border Color").description("Color of the borders.")
 			.defaultValue(Shader.solid(new Color(0, 0, 0, 0))).build();
 
-	public static ShaderSetting panelBorderColor = ShaderSetting.builder().id("ui_panel_border_color")
+	public static ShaderSetting panelBorderColor = ShaderSetting.builder().id("tw9ine_ui_panel_border_color")
 			.displayName("UI Panel Border Color").description("Accent color of the background.")
 			.defaultValue(Shader.solid(new Color(255, 255, 255, 14))).build();
 
-	public static ShaderSetting componentBackgroundColor = ShaderSetting.builder().id("ui_component_background_color")
+	public static ShaderSetting componentBackgroundColor = ShaderSetting.builder().id("tw9ine_ui_component_background_color")
 			.displayName("UI Component Background Color").description("Background colors of components (i.e TextBox).")
 			.defaultValue(Shader.solid(new Color(42, 42, 45, 200))).build();
 	
-	public static ShaderSetting componentHoveredBackgroundColor = ShaderSetting.builder().id("ui_component_hover_background_color")
+	public static ShaderSetting componentHoveredBackgroundColor = ShaderSetting.builder().id("tw9ine_ui_component_hover_background_color")
 			.displayName("UI Component Hovered Background Color").description("Background colors of components (i.e TextBox) when hovered.")
 			.defaultValue(Shader.solid(new Color(52, 52, 56, 220))).build();
 	
-	public static ShaderSetting componentBorderColor = ShaderSetting.builder().id("ui_component_border_color")
+	public static ShaderSetting componentBorderColor = ShaderSetting.builder().id("tw9ine_ui_component_border_color")
 			.displayName("UI Component Border Color").description("Background colors of components (i.e TextBox).")
 			.defaultValue(Shader.solid(new Color(255, 255, 255, 20))).build();
 	
-	public static ShaderSetting windowBackgroundColor = ShaderSetting.builder().id("ui_window_background_color")
+	public static ShaderSetting windowBackgroundColor = ShaderSetting.builder().id("tw9ine_ui_window_background_color")
 			.displayName("UI Background Color").description("Color of the background.")
 			.defaultValue(Shader.blur(new Color(26, 26, 28, 235), 40f, 5f)).build();
 
-	public static ShaderSetting panelBackgroundColor = ShaderSetting.builder().id("ui_panel_background_color")
+	public static ShaderSetting panelBackgroundColor = ShaderSetting.builder().id("tw9ine_ui_panel_background_color")
 			.displayName("UI Panel Background Color").description("Accent color of the background.")
 			.defaultValue(Shader.solid(new Color(38, 38, 41, 220))).build();
 
-	public static ShaderSetting buttonBackgroundColor = ShaderSetting.builder().id("ui_button_background_color")
+	public static ShaderSetting buttonBackgroundColor = ShaderSetting.builder().id("tw9ine_ui_button_background_color")
 			.displayName("UI Button Background Color").description("Background color of buttons.")
 			.defaultValue(Shader.solid(new Color(56, 56, 60, 230))).build();
 
 	public static ShaderSetting buttonHoverBackgroundColor = ShaderSetting.builder()
-			.id("ui_button_hover_background_color").displayName("UI Button Hover Background Color")
+			.id("tw9ine_ui_button_hover_background_color").displayName("UI Button Hover Background Color")
 			.description("Background color of buttons when hovered.")
 			.defaultValue(Shader.solid(new Color(68, 68, 73, 235))).build();
 	
 	public static ShaderSetting buttonPressedBackgroundColor = ShaderSetting.builder()
-			.id("ui_button_pressed_background_color").displayName("UI Button Pressed Background Color")
+			.id("tw9ine_ui_button_pressed_background_color").displayName("UI Button Pressed Background Color")
 			.description("Background color of buttons when pressed.")
 			.defaultValue(Shader.solid(new Color(46, 46, 50, 235))).build();
 
-	public static ShaderSetting buttonBorderColor = ShaderSetting.builder().id("ui_button_border_color")
+	public static ShaderSetting buttonBorderColor = ShaderSetting.builder().id("tw9ine_ui_button_border_color")
 			.displayName("UI Button Border Color").description("Border color of buttons.")
 			.defaultValue(Shader.solid(new Color(0, 0, 0, 0))).build();
 
-	public static ShaderSetting accentColor = ShaderSetting.builder().id("ui_accent_color")
+	public static ShaderSetting accentColor = ShaderSetting.builder().id("tw9ine_ui_accent_color")
 			.displayName("UI Accent Color")
 			.description("Highlight color for enabled modules, checkboxes, sliders and the module list.")
 			.defaultValue(Shader.solid(new Color(156, 200, 220))).build();
 
-	public static FloatSetting roundingRadius = FloatSetting.builder().id("hud_rounding_radius")
+	public static FloatSetting roundingRadius = FloatSetting.builder().id("tw9ine_hud_rounding_radius")
 			.displayName("Corner Rounding").description("The radius of the rounding on hud.").defaultValue(6f)
 			.minValue(0f).maxValue(20f).step(1f).build();
 
-	public static FloatSetting lineThickness = FloatSetting.builder().id("ui_line_thickness")
+	public static FloatSetting lineThickness = FloatSetting.builder().id("tw9ine_ui_line_thickness")
 			.displayName("Line Thickness").description("The thickness of borders and outlines.").defaultValue(0.5f)
 			.minValue(0.5f).maxValue(4f).step(0.5f).build();
 

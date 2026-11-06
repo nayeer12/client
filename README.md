@@ -1,71 +1,57 @@
-<img src="https://www.aobaclient.com/_next/image?url=%2Faoba-name.png&w=640&q=75" alt="Aoba Name" width="320" height="120">
-<br>
-<table>
-  <tr>
-    <th><a href="#server-invite">Discord</a></th>
-    <td>
-      <a target="_blank" href="https://discord.gg/krV9VrCMVm">
-        <img src="https://dcbadge.limes.pink/api/server/krV9VrCMVm" alt="Discord Server Badge" />
-      </a>
-    </td>
-  </tr>
-  <tr>
-    <th>Website</th>
-    <td><a target="_blank" href="https://www.aobaclient.com/">https://www.aobaclient.com/</a></td>
-  </tr>
-</table>
+# tw9ine
 
-# 🚨 Important Notice! 🚨  
-
-If you are considering downloading **Aoba Client for Minecraft Java Edition** (PC) or **Pojav Launcher** (Android/iOS), please make sure to download it **only** from our **official repository** or our website: [aobaclient.com](https://aobaclient.com).  
-
-We want to stress that we have **NEVER** used, and will **NEVER** use, platforms such as **MediaFire**, **Mega**, **Google Drive**, or any other third-party services to host downloads for Aoba Client. These sources are not secure and could expose you to malware or unauthorized versions. **Always download responsibly and from trusted sources!**  
+**tw9ine** is a utility mod for **Minecraft 26.3.x** built with Fabric. It is a fork of
+[Aoba Client](https://github.com/coltonk9043/Aoba-Client), with a new interface, a
+reduced combat module set and many bug fixes.
 
 ---
 
-## Aoba Client (26.3.X)  
+## Requirements
 
-**Aoba Client** is a custom utility modification tailored for **Minecraft 26.3.X** using the Fabric framework. It combines an intuitive design with powerful features to enhance your Minecraft experience, offering tools for both utility and customization.  
+- Minecraft **26.3.x**
+- Fabric Loader **0.19.5+** and Fabric API
+- Java **25**
 
----
+## Build
 
-### 🔧 Features  
+```bash
+./gradlew build
+```
 
-- **Comprehensive Alt Manager**: Effortlessly manage and switch between multiple Minecraft accounts.  
-- **Fully Functional Command System**: Access robust command features directly from within the game.  
-- **Customizable ClickGUI**: Navigate an interactive GUI with movable, pinnable windows and detailed customization options.  
-- **Extensive Hacks Library**: Explore a variety of mods with rebindable keybinds to suit your preferences.  
-- **Addon System**: Expand the client with custom-made addons using our flexible addon template, inspired by the Meteor Client.  
-- **Proxy Manager**: Manage proxy connections within Minecraft.
-
----
-
-### 🖥 Default Keybinds  
-
-- `RSHIFT (1.21.5+)` / `TILDE (~) (1.21.4)` – Open/close the **ClickGUI**.
-- `↑` – Move the menu 'cursor' **up**.  
-- `↓` – Move the menu 'cursor' **down**.  
-- `←` – Exit the current 'mod' menu.  
-- `→` – Enter the currently selected 'mod' menu.  
+The jar is written to `build/libs/tw9ine-<version>.jar`.
 
 ---
 
-### 📸 Screenshots  
+## Interface
 
-Check out how Aoba Client looks in action:  
-<img width="2560" height="1411" alt="Screenshot_20260510_090107" src="https://github.com/user-attachments/assets/9f42c2cd-cfc6-444d-bde9-d30cb4a8418f" />
+- Dark, neutral ClickGUI with rounded panels over a blurred background.
+- Disabled modules are grey; enabled modules are white with a light-blue accent bar.
+- **Left-click** a module to toggle it, **right-click** to expand its settings inline.
+- The accent colour and the rest of the palette can be changed in the *Hud* tab.
 
-
----
-
-### 📦 Addons  
-
-Take your Aoba Client experience to the next level by creating and integrating custom addons! Use the [Addon Template]([https://github.com/cvs0/Aoba-Addon-Template](https://github.com/Cocolots/Aoba-Addon-Template)) to develop your own modules and features.  
+Default key: `RSHIFT` opens/closes the ClickGUI.
 
 ---
 
-### 📜 License  
+## Combat modules
 
-This project is licensed under the **GNU General Public License v3 (GPLv3)**. You are free to use, modify, and redistribute the code as long as your adaptations comply with the GPLv3 guidelines.  
+| Module | What it does |
+| --- | --- |
+| **Aimbot** | Aims at a target. Priority by crosshair, distance, health or damage; sticky targeting; can aim only while attacking. |
+| **BowAimbot** | Calculates the arrow arc (bows and crossbows) and leads moving targets. |
+| **TriggerBot** | Attacks the entity under your crosshair when the cooldown is ready. Optional weapon-only and criticals-only modes. |
+| **MaceAura** | Mace smash on nearby targets, switching to the mace automatically and back afterwards. |
+| **AutoTotem** | Keeps a Totem of Undying in the off-hand (always, or only when in danger). |
+| **AutoCrystal** | Places and breaks End Crystals around enemies with separate place/break ranges and self-damage protection. |
+| **AutoAnchor** | Places, charges and detonates Respawn Anchors (does nothing in the Nether, where anchors do not explode). |
+| **HitCrystal** | Hold right-click while looking at a block: places obsidian, places a crystal on it and breaks it. |
 
-For questions, support, or updates, visit our official website: [aobaclient.com](https://aobaclient.com). Thank you for supporting Aoba Client, and happy modding!  
+---
+
+## Credits and license
+
+tw9ine is based on **Aoba Client** by coltonk9043 and its contributors
+(cvs0, Tewxx, OsakiTsukiko, Logging4J, TangyKiwi, Xatsec, BatchDebug, Cocolots).
+
+This project is licensed under the **GNU General Public License v3 (GPLv3)**, the same
+licence as Aoba Client. See [LICENSE](LICENSE).

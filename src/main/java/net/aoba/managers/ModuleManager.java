@@ -30,6 +30,7 @@ import net.aoba.module.modules.combat.AutoAnchor;
 import net.aoba.module.modules.combat.AutoTotem;
 import net.aoba.module.modules.combat.BowAimbot;
 import net.aoba.module.modules.combat.AutoCrystal;
+import net.aoba.module.modules.combat.HitCrystal;
 import net.aoba.module.modules.combat.MaceAura;
 import net.aoba.module.modules.combat.TriggerBot;
 import net.aoba.module.modules.misc.*;
@@ -119,6 +120,7 @@ public class ModuleManager implements KeyDownListener, KeyUpListener {
 	public FocusFps focusfps = new FocusFps();
 	public Glide glide = new Glide();
 	public GuiMove guimove = new GuiMove();
+	public HitCrystal hitCrystal = new HitCrystal();
 	public HighJump higherjump = new HighJump();
 	public Jesus jesus = new Jesus();
 	public Jetpack jetpack = new Jetpack();
