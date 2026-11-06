@@ -75,8 +75,20 @@ public class InteractionUtils {
 
 	public static EntityHitResult raycastEntity(Predicate<Entity> filter, double reach) {
 		RotationManager rotationManager = Aoba.getInstance().rotationManager;
+		return raycastEntity(rotationManager.getViewVector(), filter, reach);
+	}
+
+	/**
+	 * Raycasts from the player's eyes along a given look vector, stopping at the
+	 * first solid block, and returns the first entity matching the filter.
+	 *
+	 * @param lookVector Normalised direction to cast in.
+	 * @param filter     Entities that may be hit.
+	 * @param reach      Maximum distance of the ray.
+	 * @return EntityHitResult if an entity was hit, null otherwise.
+	 */
+	public static EntityHitResult raycastEntity(Vec3 lookVector, Predicate<Entity> filter, double reach) {
 		Vec3 eye = MC.player.getEyePosition();
-		Vec3 lookVector = rotationManager.getViewVector();
 		Vec3 end = eye.add(lookVector.scale(reach));
 
 		BlockHitResult blockHit = MC.level
