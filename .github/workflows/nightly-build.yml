@@ -91,7 +91,7 @@ jobs:
         if: steps.commit_check.outputs.has_new_commits == 'true' || github.event.inputs.force_build == 'true'
         run: |
           JAR=$(ls ./build/libs/*.jar | head -n 1)
-          mv "$JAR" "./build/libs/Aoba-${{ env.GAME_VERSION }}-${{ steps.version.outputs.build_date }}.jar"
+          mv "$JAR" "./build/libs/tw9ine-${{ env.GAME_VERSION }}-${{ steps.version.outputs.build_date }}.jar"
 
       - name: Create Release
         if: steps.commit_check.outputs.has_new_commits == 'true' || github.event.inputs.force_build == 'true'

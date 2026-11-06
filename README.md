@@ -1,7 +1,7 @@
 # tw9ine
 
 **tw9ine** is a utility mod for **Minecraft 26.3.x** built with Fabric. It is a fork of
-[Aoba Client](https://github.com/coltonk9043/Aoba-Client), with a new interface, a
+[tw9ine](https://github.com/coltonk9043/Tw9ine-Client), with a new interface, a
 reduced combat module set and many bug fixes.
 
 ---
@@ -50,8 +50,8 @@ Default key: `RSHIFT` opens/closes the ClickGUI.
 
 ## Credits and license
 
-tw9ine is based on **Aoba Client** by coltonk9043 and its contributors
+tw9ine is based on **tw9ine** by coltonk9043 and its contributors
 (cvs0, Tewxx, OsakiTsukiko, Logging4J, TangyKiwi, Xatsec, BatchDebug, Cocolots).
 
 This project is licensed under the **GNU General Public License v3 (GPLv3)**, the same
-licence as Aoba Client. See [LICENSE](LICENSE).
+licence as tw9ine. See [LICENSE](LICENSE).

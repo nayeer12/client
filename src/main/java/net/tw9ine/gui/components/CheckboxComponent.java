@@ -1,0 +1,88 @@
+/*
+ * tw9ine
+ * Copyright (C) 2026 nayeer12
+ * Portions Copyright (C) 2019-2024 coltonk9043
+ *
+ * Licensed under the GNU General Public License, Version 3 or later.
+ * See <http://www.gnu.org/licenses/>.
+ */
+
+package net.tw9ine.gui.components;
+
+import java.util.function.Consumer;
+import net.tw9ine.gui.GuiManager;
+import net.tw9ine.gui.UIElement;
+import net.tw9ine.gui.UIProperty;
+import net.tw9ine.gui.colors.Color;
+import net.tw9ine.gui.types.GridDefinition;
+import net.tw9ine.gui.types.VerticalAlignment;
+import net.tw9ine.gui.types.GridDefinition.RelativeUnit;
+import net.tw9ine.rendering.shaders.Shader;
+import net.tw9ine.utils.input.CursorStyle;
+import net.tw9ine.utils.types.MouseAction;
+import net.tw9ine.utils.types.MouseButton;
+
+public class CheckboxComponent extends Component {
+	private static final Shader COLOR_OFF = Shader.solid(new Color(58, 58, 62, 230));
+
+	private Consumer<Boolean> onChanged;
+	private final StringComponent headerComponent;
+	private final RectangleComponent checkRectangle;
+
+	public static final UIProperty<String> HeaderProperty  = new UIProperty<>("Header", "", false, true, CheckboxComponent::onHeaderChanged);
+	public static final UIProperty<Boolean> IsCheckedProperty = new UIProperty<>("IsChecked", false, false, false, CheckboxComponent::onIsCheckedChanged);
+	
+	private static void onIsCheckedChanged(UIElement sender, Boolean oldValue, Boolean newValue) {
+		if(sender instanceof CheckboxComponent checkbox) {
+			checkbox.checkRectangle.setProperty(BackgroundProperty, newValue ? GuiManager.accentColor.getValue() : COLOR_OFF);
+			
+			if(checkbox.onChanged != null)
+				checkbox.onChanged.accept(newValue);
+		}
+	}
+	
+	private static void onHeaderChanged(UIElement sender, String oldValue, String newValue) {
+		if(sender instanceof CheckboxComponent checkbox) {
+			checkbox.headerComponent.setProperty(StringComponent.TextProperty, newValue);
+		}
+	}
+	
+	public CheckboxComponent() {
+		GridComponent grid = new GridComponent();
+		grid.addColumnDefinition(new GridDefinition(RelativeUnit.Auto));
+		grid.addColumnDefinition(new GridDefinition(1f, RelativeUnit.Relative));
+		grid.setProperty(GridComponent.HorizontalSpacingProperty, 8f);
+		
+		checkRectangle = new RectangleComponent();
+		checkRectangle.setProperty(BackgroundProperty,COLOR_OFF);
+		checkRectangle.bindProperty(BorderProperty, GuiManager.componentBorderColor);
+		checkRectangle.setProperty(CornerRadiusProperty, 3f);
+		checkRectangle.setProperty(UIElement.CursorProperty, CursorStyle.Click);
+		checkRectangle.setProperty(UIElement.WidthProperty, 20f);
+		checkRectangle.setProperty(UIElement.HeightProperty, 20f);
+		checkRectangle.setProperty(UIElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+		grid.addChild(checkRectangle);
+		
+		headerComponent = new StringComponent("");
+		headerComponent.setProperty(UIElement.VerticalAlignmentProperty, VerticalAlignment.Center);
+		grid.addChild(headerComponent);
+
+		setContent(grid);
+
+		setOnClicked(e -> {
+			if (e.button == MouseButton.LEFT && e.action == MouseAction.DOWN) {
+				toggle();
+				e.cancel();
+			}
+		});
+	}
+
+	public void toggle() {
+		Boolean isChecked = getProperty(IsCheckedProperty);
+		setProperty(IsCheckedProperty, !Boolean.TRUE.equals(isChecked));
+	}
+	
+	public void setOnChanged(Consumer<Boolean> onChanged) {
+		this.onChanged = onChanged;
+	}
+}
