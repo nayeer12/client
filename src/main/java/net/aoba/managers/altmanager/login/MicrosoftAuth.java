@@ -236,7 +236,7 @@ public class MicrosoftAuth {
 							onDataReceived.accept(token);
 						} catch (Exception e) {
 							LogUtils.getLogger()
-									.info("[Aoba] Error occured while fetching Access Tokens from Microsoft");
+									.info("[tw9ine] Error occured while fetching Access Tokens from Microsoft");
 							onDataReceived.accept(null);
 						}
 
@@ -246,7 +246,7 @@ public class MicrosoftAuth {
 			}
 
 			if (!found) {
-				LogUtils.getLogger().info("[Aoba] Unable to get Access Tokens from Microsoft");
+				LogUtils.getLogger().info("[tw9ine] Unable to get Access Tokens from Microsoft");
 				onDataReceived.accept(null);
 			}
 

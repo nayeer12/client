@@ -18,7 +18,7 @@ public class CmdDiscord extends Command
 
     public CmdDiscord()
     {
-        super("discord", "Sends the Aoba Client Discord", "");
+        super("discord", "Sends the Discord invite link", "");
     }
 
     @Override

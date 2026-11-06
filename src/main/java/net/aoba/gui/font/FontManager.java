@@ -81,7 +81,7 @@ public class FontManager {
 
 		if (fonts.get(DEFAULT_FONT) == null) {
 			LogUtils.getLogger().error(
-					"[Aoba] Default font '{}' failed to load. Drop {}.ttf into src/main/resources{}",
+					"[tw9ine] Default font '{}' failed to load. Drop {}.ttf into src/main/resources{}",
 					DEFAULT_FONT, DEFAULT_FONT, BUILTIN_FONT_PATH);
 		}
 	}
@@ -91,14 +91,14 @@ public class FontManager {
 			String resourcePath = BUILTIN_FONT_PATH + id + ".ttf";
 			try (InputStream is = FontManager.class.getResourceAsStream(resourcePath)) {
 				if (is == null) {
-					LogUtils.getLogger().warn("[Aoba] Built-in font not found: {}", resourcePath);
+					LogUtils.getLogger().warn("[tw9ine] Built-in font not found: {}", resourcePath);
 					continue;
 				}
 				byte[] bytes = is.readAllBytes();
 				fonts.put(id, new UIFont(id, bytes));
-				LogUtils.getLogger().info("[Aoba] Loaded built-in font: {}", id);
+				LogUtils.getLogger().info("[tw9ine] Loaded built-in font: {}", id);
 			} catch (Exception e) {
-				LogUtils.getLogger().error("[Aoba] Failed to load built-in font: {}", id, e);
+				LogUtils.getLogger().error("[tw9ine] Failed to load built-in font: {}", id, e);
 			}
 		}
 	}

@@ -179,7 +179,7 @@ public class ModuleManager implements KeyDownListener, KeyUpListener {
 				});
 			});
 		} catch (Exception e) {
-			LogUtils.getLogger().error("Error initializing Aoba modules: " + e.getMessage());
+			LogUtils.getLogger().error("Error initializing tw9ine modules: " + e.getMessage());
 		}
 
 		// Registers all Module settings to the settings manager.

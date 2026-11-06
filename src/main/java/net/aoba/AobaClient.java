@@ -95,19 +95,19 @@ public class AobaClient {
 	 * Initializes systems and loads any assets.
 	 */
 	public void loadAssets() {
-		LOGGER.info("[Aoba] Starting Client");
+		LOGGER.info("[tw9ine] Starting Client");
 		eventManager = new EventManager();
 
 		// Register any addons.
-		LogUtils.getLogger().info("[Aoba] Starting addon initialization");
+		LogUtils.getLogger().info("[tw9ine] Starting addon initialization");
 		for (EntrypointContainer<IAddon> entrypoint : FabricLoader.getInstance().getEntrypointContainers("aoba",
 				IAddon.class)) {
 			IAddon addon = entrypoint.getEntrypoint();
 
 			try {
-				LOGGER.info("[Aoba] Initializing addon: " + addon.getName());
+				LOGGER.info("[tw9ine] Initializing addon: " + addon.getName());
 				addon.onInitialize();
-				LOGGER.info("[Aoba] Addon initialized: " + addon.getName());
+				LOGGER.info("[tw9ine] Addon initialized: " + addon.getName());
 			} catch (Throwable e) {
 				LOGGER.error("Error initializing addon: " + addon.getName(), e);
 			}
@@ -115,73 +115,73 @@ public class AobaClient {
 			addons.add(addon);
 		}
 
-		LOGGER.info("[Aoba] Reading Settings");
+		LOGGER.info("[tw9ine] Reading Settings");
 		settingManager = new SettingManager();
 
-		LOGGER.info("[Aoba] Reading Friends List");
+		LOGGER.info("[tw9ine] Reading Friends List");
 		friendsList = new FriendsList();
 
-		LOGGER.info("[Aoba] Initializing Commands");
+		LOGGER.info("[tw9ine] Initializing Commands");
 		commandManager = new CommandManager(addons);
 
-		LOGGER.info("[Aoba] Initializing Font Manager");
+		LOGGER.info("[tw9ine] Initializing Font Manager");
 		fontManager = new FontManager();
 		fontManager.Initialize();
 
-		LOGGER.info("[Aoba] Initializing Combat Manager");
+		LOGGER.info("[tw9ine] Initializing Combat Manager");
 		combatManager = new CombatManager();
 
-		LOGGER.info("[Aoba] Initializing Entity Manager");
+		LOGGER.info("[tw9ine] Initializing Entity Manager");
 		entityManager = new EntityManager();
 
-		LOGGER.info("[Aoba] Initializing Macro Manager");
+		LOGGER.info("[tw9ine] Initializing Macro Manager");
 		macroManager = new MacroManager();
 
-		LOGGER.info("[Aoba] Initializing Shader Effects");
+		LOGGER.info("[tw9ine] Initializing Shader Effects");
 		shaderManager = new ShaderManager();
 		
-		LOGGER.info("[Aoba] Initializing Renderers");
+		LOGGER.info("[tw9ine] Initializing Renderers");
 		compositor = new Compositor();
 		render2D = new Renderer2D();
 		render3D = new Renderer3D();
 
-		LOGGER.info("[Aoba] Initializing Rotation Manager");
+		LOGGER.info("[tw9ine] Initializing Rotation Manager");
 		rotationManager = new RotationManager();
 		
-		LOGGER.info("[Aoba] Initializing Modules");
+		LOGGER.info("[tw9ine] Initializing Modules");
 		moduleManager = new ModuleManager(addons);
 		
-		LOGGER.info("[Aoba] Initializing GUI");
+		LOGGER.info("[tw9ine] Initializing GUI");
 		guiManager = new GuiManager();
 		guiManager.Initialize();
 
-		LOGGER.info("[Aoba] Loading Settings");
+		LOGGER.info("[tw9ine] Loading Settings");
 		SettingManager.loadGlobalSettings();
 		SettingManager.loadSettings();
 
-		LOGGER.info("[Aoba] Initializing Alt Manager");
+		LOGGER.info("[tw9ine] Initializing Alt Manager");
 		altManager = new AltManager();
 
-		LOGGER.info("[Aoba] Initializing Proxy Manager");
+		LOGGER.info("[tw9ine] Initializing Proxy Manager");
 		proxyManager = new ProxyManager();
 
-		LOGGER.info("[Aoba] Registering Shutdown Hook");
+		LOGGER.info("[tw9ine] Registering Shutdown Hook");
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
 			try {
 				endClient();
 			} catch (Exception e) {
-				LOGGER.error("[Aoba] Error during shutdown: ", e);
+				LOGGER.error("[tw9ine] Error during shutdown: ", e);
 			}
 		}));
 
-		LOGGER.info("[Aoba] Aoba-chan initialized and ready to play!");
+		LOGGER.info("[tw9ine] Initialized and ready to play!");
 	}
 
 	/**
 	 * Called when the client is shutting down. Saves persistent data.
 	 */
 	public void endClient() {
-		LOGGER.info("[Aoba] Shutting down");
+		LOGGER.info("[tw9ine] Shutting down");
 		try {
 			SettingManager.saveSettings();
 			altManager.saveAlts();
@@ -189,7 +189,7 @@ public class AobaClient {
 			macroManager.save();
 			moduleManager.modules.forEach(Module::onDisable);
 		} catch (Exception e) {
-			LOGGER.error("[Aoba] Error saving data", e);
+			LOGGER.error("[tw9ine] Error saving data", e);
 		}
 
 		try {
@@ -198,7 +198,7 @@ public class AobaClient {
 			if (compositor != null) compositor.close();
 			AbstractRenderer.closeSharedResources();
 		} catch (Exception e) {
-			LOGGER.error("[Aoba] Error releasing renderer resources", e);
+			LOGGER.error("[tw9ine] Error releasing renderer resources", e);
 		}
 	}
 }

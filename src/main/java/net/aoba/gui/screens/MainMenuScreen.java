@@ -38,7 +38,7 @@ public class MainMenuScreen extends Screen {
 	int smallScreenHeightOffset = 0;
 
 	public MainMenuScreen() {
-		super(Component.nullToEmpty("Aoba Client Main Menu"));
+		super(Component.nullToEmpty("tw9ine Main Menu"));
 	}
 
 	public void init() {
@@ -128,7 +128,7 @@ public class MainMenuScreen extends Screen {
 		drawContext.blit(RenderPipelines.GUI_TEXTURED, TextureBank.mainmenu_logo, logoX, logoY, 0, 0, logoWidth,
 				LOGO_HEIGHT, 719, 270, 719, 270);
 
-		drawContext.text(font, "Aoba Client", 2, height - 10, 0xFFFF00FF);
+		drawContext.text(font, "tw9ine", 2, height - 10, 0xFF9CC8DC);
 
 		if (AobaClient.addons.isEmpty()) {
 			String noAddonsText = "No addons loaded";

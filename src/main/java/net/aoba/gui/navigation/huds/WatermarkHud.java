@@ -30,7 +30,7 @@ public class WatermarkHud extends HudWindow {
 		boolean isVisible = getProperty(UIElement.IsVisibleProperty);
 		if (isVisible) {
 			Rectangle pos = position.getValue();
-			String watermarkText = "Aoba Client";
+			String watermarkText = "tw9ine";
 			renderer.drawString(watermarkText, pos.x(), pos.y(),
 					GuiManager.foregroundColor.getValue(), GuiManager.fontSetting.getValue().getRenderer());
 		}

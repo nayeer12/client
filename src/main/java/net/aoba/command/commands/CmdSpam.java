@@ -39,7 +39,7 @@ public class CmdSpam extends Command {
     public String[] getAutocorrect(String previousParameter) {
         switch (previousParameter) {
             default:
-                return new String[]{"Aoba is an amazing client!"};
+                return new String[]{"tw9ine on top!"};
         }
     }
 }

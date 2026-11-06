@@ -104,7 +104,7 @@ public class RPCManager {
         } else if (MC.gui.screen() instanceof SelectWorldScreen) {
             result = "Selecting a world";
         } else if (MC.gui.screen() instanceof AobaCreditsScreen) {
-            result = "Watching Aoba credits";
+            result = "Watching tw9ine credits";
         } else if (MC.gui.screen() instanceof WinScreen) {
             result = "Watching credits";
         } else if (MC.gui.screen() instanceof CreateWorldScreen) {

@@ -93,7 +93,7 @@ public abstract class CommandSuggestionsMixin {
                         if (seperated.size() <= 1) return;
                         Command c = Aoba.getInstance().commandManager.getCommandBySyntax(seperated.get(1));
                         if (c == null) {
-                            commandUsage.add(Component.nullToEmpty("Aoba: No commands found with name: " + string2).getVisualOrderText());
+                            commandUsage.add(Component.nullToEmpty("tw9ine: No commands found with name: " + string2).getVisualOrderText());
                             return;
                         }
 

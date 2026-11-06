@@ -72,7 +72,7 @@ public class CommandManager {
 					Command cmd = (Command) field.get(this);
 					commands.put(cmd.getName(), cmd);
 				} catch (IllegalAccessException e) {
-					LogUtils.getLogger().error("Error initializing Aoba commands: " + e.getMessage());
+					LogUtils.getLogger().error("Error initializing tw9ine commands: " + e.getMessage());
 				}
 			}
 		}
@@ -138,8 +138,8 @@ public class CommandManager {
 	public static void sendChatMessage(String message) {
 		Minecraft mc = Minecraft.getInstance();
 		if (mc.gui != null) {
-			mc.gui.hud.getChat().addClientSystemMessage(Component.nullToEmpty(ChatFormatting.DARK_PURPLE + "[" + ChatFormatting.LIGHT_PURPLE + "Aoba"
-					+ ChatFormatting.DARK_PURPLE + "] " + ChatFormatting.RESET + message));
+			mc.gui.hud.getChat().addClientSystemMessage(Component.nullToEmpty(ChatFormatting.DARK_GRAY + "[" + ChatFormatting.AQUA + "tw9ine"
+					+ ChatFormatting.DARK_GRAY + "] " + ChatFormatting.RESET + message));
 		}
 	}
 }

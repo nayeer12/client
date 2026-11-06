@@ -92,7 +92,7 @@ public abstract class MinecraftMixin {
 		try {
 			Aoba.getInstance().loadAssets();
 		} catch (Throwable t) {
-			delayCrash(CrashReport.forThrowable(t, "Initializing Aoba Client"));
+			delayCrash(CrashReport.forThrowable(t, "Initializing tw9ine"));
 		}
 	}
 

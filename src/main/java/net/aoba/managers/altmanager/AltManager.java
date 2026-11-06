@@ -102,7 +102,7 @@ public class AltManager {
 		try {
 			// Finds the file and opens it.
 			File altFile = new File("aoba_alts.json");
-			LogUtils.getLogger().info("[Aoba] Saving Alts");
+			LogUtils.getLogger().info("[tw9ine] Saving Alts");
 
 			// Encrypt the alts and convert the alt list to JSON
 			Gson gson = new Gson();
@@ -119,7 +119,7 @@ public class AltManager {
 			writer.write(json);
 			writer.close();
 		} catch (IOException exception) {
-			LogUtils.getLogger().error("[Aoba] Failed to save alts");
+			LogUtils.getLogger().error("[tw9ine] Failed to save alts");
 			exception.printStackTrace();
 		}
 	}
@@ -200,7 +200,7 @@ public class AltManager {
 				alt.setAuthToken(authToken);
 				MicrosoftAuth.login(alt);
 			} else {
-				LogUtils.getLogger().error("[Aoba] Microsoft authentication failed - no token received.");
+				LogUtils.getLogger().error("[tw9ine] Microsoft authentication failed - no token received.");
 			}
 			if (onComplete != null) {
 				onComplete.run();

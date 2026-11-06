@@ -29,7 +29,7 @@ public enum RenderApi {
 			}
 			String backend = device.getDeviceInfo().backendName();
 			cached = backend != null && backend.toLowerCase(Locale.ROOT).contains("vulkan") ? VULKAN : OPENGL;
-			AobaClient.LOGGER.info("[Aoba] Render API: " + (cached == VULKAN ? "Vulkan" : "OpenGL"));
+			AobaClient.LOGGER.info("[tw9ine] Render API: " + (cached == VULKAN ? "Vulkan" : "OpenGL"));
 		}
 		return cached;
 	}

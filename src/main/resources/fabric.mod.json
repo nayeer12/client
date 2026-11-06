@@ -2,18 +2,16 @@
 	"schemaVersion": 1,
 	"id": "aoba",
 	"version": "1.0.0",
-	"name": "Aoba Client",
-	"description": "A Minecraft Fabric 26.3.x utility mod.",
+	"name": "tw9ine",
+	"description": "tw9ine - a Minecraft Fabric 26.3.x utility mod. Based on Aoba Client by coltonk9043 and contributors.",
 	"authors": [
-		"Cocolots"
+		"tw9ine",
+		"Cocolots (Aoba Client)"
 	],
 	"contact": {
-		"homepage": "https://aobaclient.com",
-		"sources": "https://github.com/coltonk9043/Aoba-Client",
-		"issues": "https://github.com/coltonk9043/Aoba-Client/issues",
-		"discord": "https://discord.gg/jEu6WfnyR6"
+		"sources": "https://github.com/coltonk9043/Aoba-Client"
 	},
-	"license": "CC0-1.0",
+	"license": "GPL-3.0-or-later",
 	"icon": "assets/aoba/icon.png",
 	"environment": "client",
 	"entrypoints": {
@@ -25,7 +23,7 @@
 		"aoba.mixins.json",
 		"aoba-sodium.mixins.json"
 	],
-	"accessWidener" : "aoba.accesswidener",
+	"accessWidener": "aoba.accesswidener",
 	"depends": {
 		"fabricloader": ">=0.19.5",
 		"minecraft": "~26.3",

@@ -30,7 +30,7 @@ public class AobaCreditsScreen extends Screen {
 	private static final long ANIMATION_DURATION = 200000;
 
 	public AobaCreditsScreen() {
-		super(Component.nullToEmpty("Aoba Credits"));
+		super(Component.nullToEmpty("tw9ine Credits"));
 	}
 
 	@Override

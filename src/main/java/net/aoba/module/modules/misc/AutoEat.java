@@ -157,12 +157,12 @@ public class AutoEat extends Module implements FoodLevelListener, PlayerHealthLi
 				if (bestFood != null) {
 					if (swapBack.getValue()) {
 						previousSlot = MC.player.getInventory().getSelectedSlot();
-						AobaClient.LOGGER.info("[Aoba] Setting previous slot to: " + previousSlot);
+						AobaClient.LOGGER.info("[tw9ine] Setting previous slot to: " + previousSlot);
 					}
 
 					lastUsedItemStack = MC.player.getInventory().getItem(foodSlot);
 					isEating = true;
-					AobaClient.LOGGER.info("[Aoba] Eating Slot: " + foodSlot);
+					AobaClient.LOGGER.info("[tw9ine] Eating Slot: " + foodSlot);
 					MC.player.getInventory().setSelectedSlot(foodSlot);
 					MC.options.keyUse.setDown(true);
 				}
@@ -187,17 +187,17 @@ public class AutoEat extends Module implements FoodLevelListener, PlayerHealthLi
 
 	@Override
 	public void onItemUsed(ItemUsedEvent.Post event) {
-		AobaClient.LOGGER.info("[Aoba] Item POST");
+		AobaClient.LOGGER.info("[tw9ine] Item POST");
 		if (lastUsedItemStack != null && ItemStack.isSameItem(event.getItemStack(), lastUsedItemStack)) {
-			AobaClient.LOGGER.info("[Aoba] EATING Item was used");
+			AobaClient.LOGGER.info("[tw9ine] EATING Item was used");
 			boolean shouldContinueEating = shouldEat();
 			if (!shouldContinueEating) {
 				MC.options.keyUse.setDown(false);
 				lastUsedItemStack = null;
-				AobaClient.LOGGER.info("[Aoba]No longer eating : " + previousSlot);
+				AobaClient.LOGGER.info("[tw9ine] No longer eating : " + previousSlot);
 				isEating = false;
 				if (swapBack.getValue() && previousSlot != -1) {
-					AobaClient.LOGGER.info("[Aoba] Swapping back to : " + previousSlot);
+					AobaClient.LOGGER.info("[tw9ine] Swapping back to : " + previousSlot);
 					MC.player.getInventory().setSelectedSlot(previousSlot);
 					previousSlot = -1;
 				}
