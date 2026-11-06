@@ -114,11 +114,11 @@ public class RangeComponent extends Component {
 		barContainer.setProperty(UIElement.HeightProperty, 14f);
 
 		trackBar = new RectangleComponent();
-		trackBar.setProperty(BackgroundProperty, Shader.solid(new Color(255, 255, 255, 100)));
+		trackBar.setProperty(BackgroundProperty, Shader.solid(new Color(255, 255, 255, 28)));
 		barContainer.addChild(trackBar);
 
 		fillBar = new RectangleComponent();
-		fillBar.bindProperty(BackgroundProperty, GuiManager.foregroundColor);
+		fillBar.bindProperty(BackgroundProperty, GuiManager.accentColor);
 		fillBar.setProperty(UIElement.HorizontalAlignmentProperty, HorizontalAlignment.Left);
 		barContainer.addChild(fillBar);
 

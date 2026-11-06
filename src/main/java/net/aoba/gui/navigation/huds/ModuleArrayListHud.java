@@ -29,7 +29,7 @@ import net.aoba.utils.types.MouseButton;
 
 public class ModuleArrayListHud extends HudWindow {
 	private final EnumSetting<TextAlign> textAlign = EnumSetting.<TextAlign>builder().id("ModuleArrayListHudText_TextAlign")
-			.displayName("Text Align").description("Text Alignment").defaultValue(TextAlign.Left).build();
+			.displayName("Text Align").description("Text Alignment").defaultValue(TextAlign.Right).build();
 
 	public ModuleArrayListHud(int x, int y) {
 		super("ModuleArrayListHud", x, y);
@@ -77,28 +77,28 @@ public class ModuleArrayListHud extends HudWindow {
 				switch (textAlign.getValue()) {
 				case Left:
 					moduleStream.forEachOrdered(mod -> {
-						float yPosition = pos.y() + 10 + (iteration.get() * 20);
+						float yPosition = pos.y() + 10 + (iteration.get() * 18);
 						renderer.drawString(mod.getName(), pos.x(), yPosition,
-								GuiManager.foregroundColor.getValue(), font);
+								GuiManager.accentColor.getValue(), font);
 						iteration.incrementAndGet();
 					});
 					break;
 				case Center:
 					moduleStream.forEachOrdered(mod -> {
-						float yPosition = pos.y() + 10 + (iteration.get() * 20);
+						float yPosition = pos.y() + 10 + (iteration.get() * 18);
 						float centerTextWidth = Renderer2D.getStringWidth(mod.getName(), font) / 2.0f;
 						renderer.drawString(mod.getName(),
 								pos.x() + (pos.width() / 2.0f) - centerTextWidth, yPosition,
-								GuiManager.foregroundColor.getValue(), font);
+								GuiManager.accentColor.getValue(), font);
 						iteration.incrementAndGet();
 					});
 					break;
 				case Right:
 					moduleStream.forEachOrdered(mod -> {
-						float yPosition = pos.y() + 10 + (iteration.get() * 20);
+						float yPosition = pos.y() + 10 + (iteration.get() * 18);
 						float rightTextWidth = Renderer2D.getStringWidth(mod.getName(), font);
 						renderer.drawString(mod.getName(), pos.x() + pos.width() - rightTextWidth,
-								yPosition, GuiManager.foregroundColor.getValue(), font);
+								yPosition, GuiManager.accentColor.getValue(), font);
 						iteration.incrementAndGet();
 					});
 					break;

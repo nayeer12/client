@@ -22,8 +22,7 @@ import net.aoba.utils.types.MouseAction;
 import net.aoba.utils.types.MouseButton;
 
 public class CheckboxComponent extends Component {
-	private static final Shader COLOR_ON = Shader.gradient(new Color(2, 212, 2), new Color(0, 154, 0, 200), 90);
-	private static final Shader COLOR_OFF = Shader.gradient(new Color(189, 0, 0),new Color(154, 0, 0, 200), 90);		
+	private static final Shader COLOR_OFF = Shader.solid(new Color(58, 58, 62, 230));
 
 	private Consumer<Boolean> onChanged;
 	private final StringComponent headerComponent;
@@ -34,7 +33,7 @@ public class CheckboxComponent extends Component {
 	
 	private static void onIsCheckedChanged(UIElement sender, Boolean oldValue, Boolean newValue) {
 		if(sender instanceof CheckboxComponent checkbox) {
-			checkbox.checkRectangle.setProperty(BackgroundProperty, newValue ? COLOR_ON : COLOR_OFF);
+			checkbox.checkRectangle.setProperty(BackgroundProperty, newValue ? GuiManager.accentColor.getValue() : COLOR_OFF);
 			
 			if(checkbox.onChanged != null)
 				checkbox.onChanged.accept(newValue);

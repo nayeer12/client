@@ -37,7 +37,7 @@ import net.aoba.gui.colors.Color;
 import net.aoba.gui.colors.Colors;
 import net.aoba.gui.font.FontManager;
 import net.aoba.gui.components.GridComponent;
-import net.aoba.gui.components.ImageComponent;
+import net.aoba.gui.types.Thickness;
 import net.aoba.gui.components.ModuleComponent;
 import net.aoba.gui.components.TabComponent;
 import net.aoba.gui.components.TabItemComponent;
@@ -105,6 +105,8 @@ public class GuiManager implements KeyDownListener, TickListener, Render2DListen
 	private final KeyMapping esc = new KeyMapping("key.esc", InputConstants.KEY_ESCAPE, AobaClient.AOBA_CATEGORY);
 
 	private boolean clickGuiOpen = false;
+	/** Blurs and darkens the world behind the ClickGUI. */
+	private static final Shader CLICKGUI_BACKDROP = Shader.blur(new Color(10, 10, 12, 110), 24f, 5f);
 	private static boolean isKeyboardInputActive = false;
 	private static UIElement focusedElement = null;
 	private final HashMap<Object, Window> pinnedHuds = new HashMap<Object, Window>();
@@ -130,60 +132,65 @@ public class GuiManager implements KeyDownListener, TickListener, Render2DListen
 
 	public static ShaderSetting foregroundHeaderColor = ShaderSetting.builder().id("ui_header_foreground_color")
 			.displayName("UI Header Foreground Color").description("Color of the header foreground.")
-			.defaultValue(Shader.solid(new Color(210, 80, 255))).build();
+			.defaultValue(Shader.solid(new Color(236, 238, 240))).build();
 
 	public static ShaderSetting foregroundAccentColor = ShaderSetting.builder().id("ui_accent_foreground_color")
 			.displayName("UI Accent Foreground Color").description("Color of the accented foreground.")
-			.defaultValue(Shader.solid(Colors.Gray)).build();
+			.defaultValue(Shader.solid(new Color(138, 138, 142))).build();
 
 	public static ShaderSetting windowBorderColor = ShaderSetting.builder().id("ui_window_border_color")
 			.displayName("UI Border Color").description("Color of the borders.")
-			.defaultValue(Shader.solid(new Color(0, 0, 0))).build();
+			.defaultValue(Shader.solid(new Color(0, 0, 0, 0))).build();
 
 	public static ShaderSetting panelBorderColor = ShaderSetting.builder().id("ui_panel_border_color")
 			.displayName("UI Panel Border Color").description("Accent color of the background.")
-			.defaultValue(Shader.solid(new Color(100, 100, 100, 100))).build();
+			.defaultValue(Shader.solid(new Color(255, 255, 255, 14))).build();
 
 	public static ShaderSetting componentBackgroundColor = ShaderSetting.builder().id("ui_component_background_color")
 			.displayName("UI Component Background Color").description("Background colors of components (i.e TextBox).")
-			.defaultValue(Shader.solid(new Color(20, 20, 20, 95))).build();
+			.defaultValue(Shader.solid(new Color(42, 42, 45, 200))).build();
 	
 	public static ShaderSetting componentHoveredBackgroundColor = ShaderSetting.builder().id("ui_component_hover_background_color")
 			.displayName("UI Component Hovered Background Color").description("Background colors of components (i.e TextBox) when hovered.")
-			.defaultValue(Shader.solid(new Color(50, 50, 50, 150))).build();
+			.defaultValue(Shader.solid(new Color(52, 52, 56, 220))).build();
 	
 	public static ShaderSetting componentBorderColor = ShaderSetting.builder().id("ui_component_border_color")
 			.displayName("UI Component Border Color").description("Background colors of components (i.e TextBox).")
-			.defaultValue(Shader.solid(new Color(115, 115, 115, 200))).build();
+			.defaultValue(Shader.solid(new Color(255, 255, 255, 20))).build();
 	
 	public static ShaderSetting windowBackgroundColor = ShaderSetting.builder().id("ui_window_background_color")
 			.displayName("UI Background Color").description("Color of the background.")
-			.defaultValue(Shader.blur(new Color(55, 55, 55, 255), 60f, 5f)).build();
+			.defaultValue(Shader.blur(new Color(26, 26, 28, 235), 40f, 5f)).build();
 
 	public static ShaderSetting panelBackgroundColor = ShaderSetting.builder().id("ui_panel_background_color")
 			.displayName("UI Panel Background Color").description("Accent color of the background.")
-			.defaultValue(Shader.solid(new Color(90, 90, 90, 60))).build();
+			.defaultValue(Shader.solid(new Color(38, 38, 41, 220))).build();
 
 	public static ShaderSetting buttonBackgroundColor = ShaderSetting.builder().id("ui_button_background_color")
 			.displayName("UI Button Background Color").description("Background color of buttons.")
-			.defaultValue(Shader.gradient(new Color(180, 50, 220), new Color(100, 20, 160), 90f)).build();
+			.defaultValue(Shader.solid(new Color(56, 56, 60, 230))).build();
 
 	public static ShaderSetting buttonHoverBackgroundColor = ShaderSetting.builder()
 			.id("ui_button_hover_background_color").displayName("UI Button Hover Background Color")
 			.description("Background color of buttons when hovered.")
-			.defaultValue(Shader.gradient(new Color(210, 80, 255), new Color(130, 40, 190), 90f)).build();
+			.defaultValue(Shader.solid(new Color(68, 68, 73, 235))).build();
 	
 	public static ShaderSetting buttonPressedBackgroundColor = ShaderSetting.builder()
 			.id("ui_button_pressed_background_color").displayName("UI Button Pressed Background Color")
 			.description("Background color of buttons when pressed.")
-			.defaultValue(Shader.gradient(new Color(150, 20, 195), new Color(70, 0, 130), 90f)).build();
+			.defaultValue(Shader.solid(new Color(46, 46, 50, 235))).build();
 
 	public static ShaderSetting buttonBorderColor = ShaderSetting.builder().id("ui_button_border_color")
 			.displayName("UI Button Border Color").description("Border color of buttons.")
-			.defaultValue(Shader.gradient(new Color(220, 100, 255), new Color(140, 50, 200), 90f)).build();
+			.defaultValue(Shader.solid(new Color(0, 0, 0, 0))).build();
+
+	public static ShaderSetting accentColor = ShaderSetting.builder().id("ui_accent_color")
+			.displayName("UI Accent Color")
+			.description("Highlight color for enabled modules, checkboxes, sliders and the module list.")
+			.defaultValue(Shader.solid(new Color(156, 200, 220))).build();
 
 	public static FloatSetting roundingRadius = FloatSetting.builder().id("hud_rounding_radius")
-			.displayName("Corner Rounding").description("The radius of the rounding on hud.").defaultValue(12f)
+			.displayName("Corner Rounding").description("The radius of the rounding on hud.").defaultValue(6f)
 			.minValue(0f).maxValue(20f).step(1f).build();
 
 	public static FloatSetting lineThickness = FloatSetting.builder().id("ui_line_thickness")
@@ -191,7 +198,7 @@ public class GuiManager implements KeyDownListener, TickListener, Render2DListen
 			.minValue(0.5f).maxValue(4f).step(0.5f).build();
 
 	public static FontSetting fontSetting = FontSetting.builder().id("aoba_font").displayName("Font")
-			.description("The font that Aoba will use.").fontName(FontManager.DEFAULT_FONT).build();
+			.description("The font that tw9ine will use.").fontName(FontManager.DEFAULT_FONT).build();
 
 	public ModuleSelectorHud moduleSelector;
 	public ArmorHud armorHud;
@@ -223,6 +230,7 @@ public class GuiManager implements KeyDownListener, TickListener, Render2DListen
 		SettingManager.registerGlobalSetting(buttonHoverBackgroundColor);
 		SettingManager.registerGlobalSetting(buttonPressedBackgroundColor);
 		SettingManager.registerGlobalSetting(buttonBorderColor);
+		SettingManager.registerGlobalSetting(accentColor);
 		SettingManager.registerGlobalSetting(roundingRadius);
 		SettingManager.registerGlobalSetting(lineThickness);
 		SettingManager.registerGlobalSetting(fontSetting);
@@ -267,25 +275,17 @@ public class GuiManager implements KeyDownListener, TickListener, Render2DListen
 			Window tab = new Window(category.getName(), xOffset, 75.0f);
 			tab.setSizeToContent(SizeToContent.Height);
 			StackPanelComponent stackPanel = new StackPanelComponent();
-			stackPanel.setSpacing(2f);
+			stackPanel.setSpacing(0f);
 
 			GridComponent gridComponent = new GridComponent();
 			gridComponent.setProperty(GridComponent.HorizontalSpacingProperty, 8f);
 			gridComponent.setProperty(UIElement.IsHitTestVisibleProperty, false);
-			gridComponent.addColumnDefinition(new GridDefinition(RelativeUnit.Auto));
-			gridComponent.addColumnDefinition(new GridDefinition(1, RelativeUnit.Relative)); // Fill all remaining space
-
-			ImageComponent img = new ImageComponent();
-			img.setProperty(ImageComponent.ImageProperty, category.getIcon());
-			img.setProperty(UIElement.IsHitTestVisibleProperty, false);
-			img.setProperty(UIElement.WidthProperty, 16f);
-			img.setProperty(UIElement.HeightProperty, 16f);
-			img.bindProperty(UIElement.ForegroundProperty, GuiManager.foregroundHeaderColor);
-			gridComponent.addChild(img);
+			gridComponent.addColumnDefinition(new GridDefinition(1, RelativeUnit.Relative));
+			gridComponent.setProperty(UIElement.MarginProperty, new Thickness(2f, 0f, 0f, 8f));
 
 			StringComponent title = new StringComponent();
 			title.setProperty(StringComponent.TextProperty, category.getName());
-			title.setProperty(UIElement.FontWeightProperty, FontManager.WEIGHT_BOLD);
+			title.setProperty(UIElement.FontWeightProperty, FontManager.WEIGHT_SEMI_BOLD);
 			title.setProperty(UIElement.VerticalAlignmentProperty, VerticalAlignment.Center);
 			title.setProperty(UIElement.IsHitTestVisibleProperty, false);
 			title.bindProperty(UIElement.ForegroundProperty, GuiManager.foregroundHeaderColor);
@@ -486,8 +486,7 @@ public class GuiManager implements KeyDownListener, TickListener, Render2DListen
 		matrixStack.scale(uiScale, uiScale);
 		// Render ClickGUI and Topbar
 		if (clickGuiOpen) {
-			renderer.drawBox(0, 0, window.getScreenWidth(), window.getScreenHeight(),
-					Shader.solid(new Color(26, 26, 26, 100)));
+			renderer.drawBox(0, 0, window.getScreenWidth(), window.getScreenHeight(), CLICKGUI_BACKDROP);
 
 			// Measure and position TabComponent at top-center
 			clickGuiTabControl.measureCore(new Size(window.getScreenWidth(), window.getScreenHeight()));
