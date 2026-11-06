@@ -49,6 +49,7 @@ import net.tw9ine.gui.navigation.Page;
 import net.tw9ine.gui.navigation.Popup;
 import net.tw9ine.gui.navigation.Window;
 import net.tw9ine.gui.navigation.huds.ArmorHud;
+import net.tw9ine.gui.navigation.huds.TargetHud;
 import net.tw9ine.gui.navigation.huds.CoordsHud;
 import net.tw9ine.gui.navigation.huds.DayHud;
 import net.tw9ine.gui.navigation.huds.FPSHud;
@@ -106,8 +107,8 @@ public class GuiManager implements KeyDownListener, TickListener, Render2DListen
 	private final KeyMapping esc = new KeyMapping("key.esc", InputConstants.KEY_ESCAPE, Tw9ineClient.TW9INE_CATEGORY);
 
 	private boolean clickGuiOpen = false;
-	/** Blurs and darkens the world behind the ClickGUI. */
-	private static final Shader CLICKGUI_BACKDROP = Shader.blur(new Color(10, 10, 12, 110), 24f, 5f);
+	/** Darkens the world behind the ClickGUI (solid colour, no blur, for performance). */
+	private static final Shader CLICKGUI_BACKDROP = Shader.solid(new Color(8, 8, 10, 120));
 	private static boolean isKeyboardInputActive = false;
 	private static UIElement focusedElement = null;
 	private final HashMap<Object, Window> pinnedHuds = new HashMap<Object, Window>();
@@ -159,9 +160,9 @@ public class GuiManager implements KeyDownListener, TickListener, Render2DListen
 			.displayName("UI Component Border Color").description("Background colors of components (i.e TextBox).")
 			.defaultValue(Shader.solid(new Color(255, 255, 255, 20))).build();
 	
-	public static ShaderSetting windowBackgroundColor = ShaderSetting.builder().id("tw9ine_ui_window_background_color")
+	public static ShaderSetting windowBackgroundColor = ShaderSetting.builder().id("tw9ine_ui_window_bg")
 			.displayName("UI Background Color").description("Color of the background.")
-			.defaultValue(Shader.blur(new Color(26, 26, 28, 235), 40f, 5f)).build();
+			.defaultValue(Shader.solid(new Color(26, 26, 28, 242))).build();
 
 	public static ShaderSetting panelBackgroundColor = ShaderSetting.builder().id("tw9ine_ui_panel_background_color")
 			.displayName("UI Panel Background Color").description("Accent color of the background.")
@@ -214,6 +215,7 @@ public class GuiManager implements KeyDownListener, TickListener, Render2DListen
 	public PingHud pingHud;
 	public SpeedHud speedHud;
 	public InputHud inputHud;
+	public TargetHud targetHud;
 
 	public GuiManager() {
 		clickGuiTabControl = new TabComponent();
@@ -264,9 +266,14 @@ public class GuiManager implements KeyDownListener, TickListener, Render2DListen
 		pingHud = new PingHud(0, 0);
 		speedHud = new SpeedHud(0, 0);
 		inputHud = new InputHud(0,0);
+		targetHud = new TargetHud(0, 0);
 
 		ArrayList<HudWindow> huds = Lists.newArrayList(moduleSelector, armorHud, radarHud, timeHud, dayHud,
-				moduleArrayListHud, watermarkHud, coordsHud, netherCoordsHud, fpsHud, pingHud, speedHud, inputHud);
+				moduleArrayListHud, watermarkHud, coordsHud, netherCoordsHud, fpsHud, pingHud, speedHud, inputHud, targetHud);
+		// HUDs that are on by default. Saved settings are loaded afterwards and override this.
+		setHudActive(watermarkHud, true);
+		setHudActive(moduleArrayListHud, true);
+		setHudActive(targetHud, true);
 		hudPane.addWindow(new UIOptionsWindow());
 		hudPane.addWindow(new ToggleHudsTab(huds));
 		Map<String, Category> categories = Category.getAllCategories();

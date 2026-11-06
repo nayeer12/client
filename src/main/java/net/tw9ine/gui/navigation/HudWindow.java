@@ -19,8 +19,8 @@ import net.tw9ine.rendering.Renderer2D;
 import net.tw9ine.rendering.shaders.Shader;
 
 public class HudWindow extends Window {
-	private static final Shader hoverColor = Shader.solid(new Color(255, 0, 0));
-	private static final Shader dragColor = Shader.solid(new Color(255, 0, 0, 165));
+	private static final Shader hoverColor = Shader.solid(new Color(156, 200, 220, 120));
+	private static final Shader dragColor = Shader.solid(new Color(156, 200, 220, 50));
 	
 	public BooleanSetting activated;
 
