@@ -1,34 +1,19 @@
 {
 	"schemaVersion": 1,
-	"id": "tw9ine",
-	"version": "1.0.0",
-	"name": "tw9ine",
-	"description": "tw9ine - a Minecraft Fabric 26.3.x utility mod.",
-	"authors": [
-		"nayeer12"
-	],
-	"contact": {
-		"homepage": "https://github.com/nayeer12/client",
-		"sources": "https://github.com/nayeer12/client",
-		"issues": "https://github.com/nayeer12/client/issues"
-	},
-	"license": "GPL-3.0-or-later",
-	"icon": "assets/tw9ine/icon.png",
+	"id": "n4y_glass",
+	"version": "${version}",
+	"name": "n4y Client Glass Edition",
+	"description": "Interfaz Liquid Glass para Minecraft. Solo visual: no modifica mecánicas del juego.",
+	"authors": ["n4y"],
+	"license": "All-Rights-Reserved",
 	"environment": "client",
 	"entrypoints": {
-		"main": [
-			"net.tw9ine.Tw9ine"
-		]
+		"client": ["dev.n4y.glass.N4yGlassClient"]
 	},
-	"mixins": [
-		"tw9ine.mixins.json",
-		"tw9ine-sodium.mixins.json"
-	],
-	"accessWidener": "tw9ine.accesswidener",
 	"depends": {
-		"fabricloader": ">=0.19.5",
-		"minecraft": "~26.3",
-		"java": ">=25",
+		"fabricloader": ">=0.20.1",
+		"minecraft": "~1.21.11",
+		"java": ">=21",
 		"fabric-api": "*"
 	}
 }

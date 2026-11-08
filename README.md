@@ -1,57 +1,41 @@
-# tw9ine
+# n4y Client · Glass Edition
 
-**tw9ine** is a utility mod for **Minecraft 26.3.x** built with Fabric. It is a fork of
-[tw9ine](https://github.com/coltonk9043/Tw9ine-Client), with a new interface, a
-reduced combat module set and many bug fixes.
+Interfaz **Liquid Glass** para Minecraft, construida como mod de **Fabric**.
+Es solo visual: los controles son demostrativos y no modifican las mecánicas del juego.
 
----
+## Versiones
 
-## Requirements
+| Componente | Versión |
+|---|---|
+| Minecraft | 1.21.11 |
+| Fabric Loader | 0.20.1 |
+| Fabric API | 0.141.6+1.21.11 |
+| Fabric Loom | 1.14.10 |
+| Gradle (wrapper) | 9.2.1 |
+| Java | 21 |
+| Mapeos | Mojang oficiales |
 
-- Minecraft **26.3.x**
-- Fabric Loader **0.19.5+** and Fabric API
-- Java **25**
-
-## Build
+## Desarrollo
 
 ```bash
-./gradlew build
+./gradlew runClient   # abre Minecraft con el mod
+./gradlew build       # genera build/libs/n4y-glass-<versión>.jar
 ```
 
-The jar is written to `build/libs/tw9ine-<version>.jar`.
+En IntelliJ IDEA: *File → Open* sobre la carpeta del proyecto, usar JDK 21 y esperar a que Gradle sincronice.
 
----
+## Uso
 
-## Interface
+- **Shift derecho** dentro de un mundo abre el menú (se puede cambiar en *Controles → n4y Glass*).
+- En el menú principal aparece el botón **n4y Glass** arriba a la izquierda.
+- El desenfoque usa la opción de Minecraft *Accesibilidad → Desenfoque del fondo del menú*; si está a 0 no habrá blur.
 
-- Dark, neutral ClickGUI with rounded panels over a blurred background.
-- Disabled modules are grey; enabled modules are white with a light-blue accent bar.
-- **Left-click** a module to toggle it, **right-click** to expand its settings inline.
-- The accent colour and the rest of the palette can be changed in the *Hud* tab.
+## Hoja de ruta
 
-Default key: `RSHIFT` opens/closes the ClickGUI.
-
----
-
-## Combat modules
-
-| Module | What it does |
-| --- | --- |
-| **Aimbot** | Aims at a target. Priority by crosshair, distance, health or damage; sticky targeting; can aim only while attacking. |
-| **BowAimbot** | Calculates the arrow arc (bows and crossbows) and leads moving targets. |
-| **TriggerBot** | Attacks the entity under your crosshair when the cooldown is ready. Optional weapon-only and criticals-only modes. |
-| **MaceAura** | Mace smash on nearby targets, switching to the mace automatically and back afterwards. |
-| **AutoTotem** | Keeps a Totem of Undying in the off-hand (always, or only when in danger). |
-| **AutoCrystal** | Places and breaks End Crystals around enemies with separate place/break ranges and self-damage protection. |
-| **AutoAnchor** | Places, charges and detonates Respawn Anchors (does nothing in the Nether, where anchors do not explode). |
-| **HitCrystal** | Hold right-click while looking at a block: places obsidian, places a crystal on it and breaks it. |
-
----
-
-## Credits and license
-
-tw9ine is based on **tw9ine** by coltonk9043 and its contributors
-(cvs0, Tewxx, OsakiTsukiko, Logging4J, TangyKiwi, Xatsec, BatchDebug, Cocolots).
-
-This project is licensed under the **GNU General Public License v3 (GPLv3)**, the same
-licence as tw9ine. See [LICENSE](LICENSE).
+1. ✅ Proyecto base y pantalla principal
+2. Fondo desenfocado y panel de cristal (shader SDF)
+3. Bordes luminosos, reflejos y glow
+4. Navegación lateral y categorías con animaciones
+5. Tarjetas e interruptores de demostración
+6. Búsqueda funcional
+7. Refracción líquida y pulido
