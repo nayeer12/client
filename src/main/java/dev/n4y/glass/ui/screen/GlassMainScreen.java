@@ -1,5 +1,6 @@
 package dev.n4y.glass.ui.screen;
 
+import dev.n4y.glass.render.Wallpaper;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -7,7 +8,7 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Pantalla principal de n4y Glass.
- * Paso 1: solo fondo desenfocado y título. Los paneles de cristal llegan en el paso 2.
+ * Paso 1: fondo de pantalla y título. Los paneles de cristal llegan en el paso 2.
  */
 public class GlassMainScreen extends Screen {
 	@Nullable
@@ -20,14 +21,10 @@ public class GlassMainScreen extends Screen {
 
 	@Override
 	public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-		if (this.minecraft.level == null) {
-			// En el menú principal no hay mundo: se desenfoca el panorama.
-			this.renderPanorama(graphics, partialTick);
-		}
-		// Blur nativo de 1.21.11 (blurBeforeThisStratum): desenfoca todo lo dibujado antes.
-		this.renderBlurredBackground(graphics);
-		// Velo oscuro suave para dar contraste al contenido.
-		graphics.fillGradient(0, 0, this.width, this.height, 0x40000000, 0x70000000);
+		// Fondo de pantalla personalizado de n4y (cubre el mundo o el panorama).
+		Wallpaper.DEFAULT.renderCover(graphics, this.width, this.height);
+		// Velo suave abajo para dar contraste al texto y a los futuros paneles.
+		graphics.fillGradient(0, 0, this.width, this.height, 0x10000000, 0x60000000);
 	}
 
 	@Override

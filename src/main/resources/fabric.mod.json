@@ -6,6 +6,7 @@
 	"description": "Interfaz Liquid Glass para Minecraft. Solo visual: no modifica mecánicas del juego.",
 	"authors": ["n4y"],
 	"license": "All-Rights-Reserved",
+	"icon": "assets/n4y_glass/icon.png",
 	"environment": "client",
 	"entrypoints": {
 		"client": ["dev.n4y.glass.N4yGlassClient"]

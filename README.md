@@ -28,6 +28,7 @@ En IntelliJ IDEA: *File → Open* sobre la carpeta del proyecto, usar JDK 21 y e
 
 - **Shift derecho** dentro de un mundo abre el menú (se puede cambiar en *Controles → n4y Glass*).
 - En el menú principal aparece el botón **n4y Glass** arriba a la izquierda.
+- La pantalla usa como fondo `assets/n4y_glass/textures/gui/wallpaper.png` (también es el icono del mod).
 - El desenfoque usa la opción de Minecraft *Accesibilidad → Desenfoque del fondo del menú*; si está a 0 no habrá blur.
 
 ## Hoja de ruta
